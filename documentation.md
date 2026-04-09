@@ -44,7 +44,7 @@ Opinião técnica:
 ├── tests/
 │   └── test_avaliador.py
 ├── avaliador.py
-├── documation.md
+├── documentation.md
 ├── exemplos.json
 ├── main.py
 ├── preprocessamento.py
@@ -53,12 +53,34 @@ Opinião técnica:
 └── testes_exemplos.py
 ```
 
+Mapa do projeto em Mermaid:
+
+```mermaid
+flowchart LR
+    projeto["Did It Understand?"]
+
+    projeto --> cli["main.py<br/>CLI interativa"]
+    projeto --> avaliador["avaliador.py<br/>nota, similaridade e feedback"]
+    projeto --> prep["preprocessamento.py<br/>limpeza, tokens e stemming"]
+    projeto --> exemplos["exemplos.json<br/>cenários de demonstração"]
+    projeto --> runner["testes_exemplos.py<br/>roda exemplos preparados"]
+    projeto --> tests["tests/test_avaliador.py<br/>testes automatizados"]
+    projeto --> docs["README.md + documentation.md<br/>uso, entrega e documentação"]
+
+    cli --> avaliador
+    runner --> avaliador
+    avaliador --> prep
+    tests --> avaliador
+    tests --> prep
+    runner --> exemplos
+```
+
 ## 4. Como instalar
 
 Recomendação:
 
 ```bash
-python -m venv .venv
+python -m venv venv
 ```
 
 No Windows PowerShell:
@@ -243,28 +265,31 @@ Os testes verificam comportamentos centrais, como:
 
 ## 9. Fluxo interno da avaliação
 
-O caminho da resposta dentro do sistema é:
+O caminho da resposta dentro do sistema é este:
 
-```text
-texto original
-↓
-normalização
-↓
-tokenização
-↓
-remoção de stopwords
-↓
-stemming
-↓
-vetorização TF-IDF
-↓
-similaridade do cosseno
-↓
-cálculo de palavras-chave
-↓
-nota final
-↓
-feedback
+```mermaid
+flowchart TD
+    entrada["Texto original"]
+    normalizacao["Normalização<br/>minúsculas, acentos, pontuação e espaços"]
+    tokens["Tokenização"]
+    stopwords["Remoção de stopwords"]
+    stemming["Stemming<br/>SnowballStemmer do NLTK"]
+    tfidf["Vetorização TF-IDF<br/>TfidfVectorizer"]
+    similaridade["Similaridade do cosseno<br/>cosine_similarity"]
+    keywords["Cobertura de palavras-chave"]
+    nota["Nota final<br/>80% similaridade + 20% palavras-chave"]
+    feedback["Feedback<br/>Entendeu, Parcial ou Nao entendeu"]
+
+    entrada --> normalizacao
+    normalizacao --> tokens
+    tokens --> stopwords
+    stopwords --> stemming
+    stemming --> tfidf
+    tfidf --> similaridade
+    tokens --> keywords
+    similaridade --> nota
+    keywords --> nota
+    nota --> feedback
 ```
 
 ## 10. Como a nota é calculada

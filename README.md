@@ -24,7 +24,7 @@ E retorna:
 ├── tests/
 │   └── test_avaliador.py      # Testes automatizados do pré-processamento e avaliador
 ├── avaliador.py               # Calcula TF-IDF, similaridade, nota e feedback
-├── documation.md              # Documentação técnica detalhada do projeto
+├── documentation.md           # Documentação técnica detalhada do projeto
 ├── exemplos.json              # Casos prontos para demonstração e análise crítica
 ├── main.py                    # Interface de terminal para usar o avaliador
 ├── preprocessamento.py        # Normalização, tokenização, stopwords e stemming
@@ -34,6 +34,29 @@ E retorna:
 ```
 
 ## Como a solução funciona
+
+```mermaid
+flowchart TD
+    pergunta["Pergunta"]
+    esperada["Resposta esperada"]
+    usuario["Resposta do usuário"]
+    preprocessamento["Pré-processamento<br/>normalização, stopwords e stemming"]
+    tfidf["Vetorização TF-IDF<br/>scikit-learn"]
+    cosseno["Similaridade do cosseno"]
+    palavras_chave["Cobertura de palavras-chave"]
+    nota["Nota final<br/>0 a 100"]
+    feedback["Feedback<br/>Entendeu, Parcial ou Não entendeu"]
+
+    pergunta --> feedback
+    esperada --> preprocessamento
+    usuario --> preprocessamento
+    preprocessamento --> tfidf
+    tfidf --> cosseno
+    preprocessamento --> palavras_chave
+    cosseno --> nota
+    palavras_chave --> nota
+    nota --> feedback
+```
 
 ### 1. Pré-processamento
 
