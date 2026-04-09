@@ -30,8 +30,8 @@ did-it-understand/
 |- preprocessamento.py
 |- requirements.txt
 |- testes_exemplos.py
-`- tests/
-   `- test_avaliador.py
+|- tests/
+|  `- test_avaliador.py
 ```
 
 ## Como a solução funciona
