@@ -134,7 +134,7 @@ def remover_acentos(texto: str) -> str:
 
 
 def normalizar_texto(texto: str) -> str:
-    texto = "" if texto is None else str(texto)
+    texto = "" if texto is None else texto
     texto = remover_acentos(texto.lower()).strip()
     texto = re.sub(r"[^\w\s]", " ", texto, flags=re.UNICODE)
     texto = re.sub(r"\s+", " ", texto).strip()
@@ -142,9 +142,7 @@ def normalizar_texto(texto: str) -> str:
 
 
 def tokenizar(texto: str) -> list[str]:
-    if not texto:
-        return []
-    return re.findall(r"[a-z0-9]+", texto)
+    return re.findall(r"[a-z0-9]+", texto) if texto else []
 
 
 def radicalizar_token(token: str) -> str:
@@ -171,7 +169,7 @@ def preprocessar_texto(
     tokens_comparacao = [radicalizar_token(token) for token in tokens] if aplicar_stemming else tokens
 
     return TextoProcessado(
-        original="" if texto is None else str(texto),
+        original="" if texto is None else texto,
         normalizado=normalizado,
         tokens=tokens,
         tokens_comparacao=tokens_comparacao,
