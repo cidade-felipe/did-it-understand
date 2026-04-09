@@ -1,792 +1,614 @@
 # Documentação técnica, Did It Understand?
 
-## 1. Descrição do trabalho
+## 1. Visão geral
 
-O projeto **Did It Understand?** é um avaliador simples de respostas textuais com técnicas de Processamento de Linguagem Natural.
+O **Did It Understand?** é um projeto em Python para avaliar respostas textuais.
 
-A proposta do trabalho é responder, com senso crítico, à pergunta: **a máquina entendeu?**
-
-Na prática, o sistema recebe:
+A entrada do sistema é:
 
 - uma pergunta
 - uma resposta esperada
 - uma resposta escrita pelo usuário
 
-Depois disso, ele compara a resposta esperada com a resposta do usuário e retorna:
+A saída esperada é:
 
-- similaridade TF-IDF
-- cobertura de palavras-chave
-- nota final de `0` a `100`
-- feedback, `Entendeu`, `Parcial` ou `Nao entendeu`
-- observações para ajudar na interpretação
+- uma nota de `0` a `100`
+- um feedback, `Entendeu`, `Parcial` ou `Nao entendeu`
+- indicadores que ajudam a explicar a avaliação
 
-## 2. Ideia principal
+O repositório tem duas implementações:
 
-Fato:
+- `mais_ou_menos`, versão determinística com PLN clássico, TF-IDF, similaridade do cosseno, stemming e palavras-chave
+- `topzera`, versão com Azure OpenAI, que pede para um modelo avaliar a proximidade semântica da resposta
 
-- o sistema compara textos por padrões de palavras
-- o sistema usa TF-IDF, stemming, stopwords, palavras-chave e similaridade do cosseno
+## 2. Tese do trabalho
 
-Inferência:
-
-- uma resposta com vocabulário parecido tende a receber uma nota maior
-- uma resposta correta, mas escrita com termos muito diferentes, pode receber uma nota baixa
-
-Opinião técnica:
-
-- este sistema é adequado para demonstrar PLN básico em sala, mas não deve ser vendido como um corretor automático perfeito
-
-## 3. Estrutura do projeto
+Pergunta central:
 
 ```text
+A máquina entendeu?
+```
+
+Resposta crítica:
+
+```text
+Depende da versão e do que chamamos de "entender".
+```
+
+Fato: a versão `mais_ou_menos` mede proximidade textual. Ela transforma as respostas em tokens, calcula vetores TF-IDF e compara esses vetores.
+
+Fato: a versão `topzera` usa um modelo disponibilizado no Azure OpenAI para julgar significado, lacunas, acertos e contradições.
+
+Inferência: a versão clássica é mais previsível e barata, mas tem dificuldade com sinônimos e paráfrases. A versão com IA lida melhor com significado, mas depende de API externa, credencial, deployment, internet e custo por uso.
+
+Opinião técnica: para apresentação, a melhor abordagem é mostrar as duas versões. A primeira prova que o grupo entende o pipeline básico de PLN. A segunda mostra uma evolução prática, mais próxima de um avaliador semântico.
+
+## 3. Estrutura atual do projeto
+
+```text
+did-it-understand/
 ├── Backup/
-│   └── README.original.md
-├── tests/
-│   └── test_avaliador.py
-├── avaliador.py
-├── documentation.md
-├── exemplos.json
-├── main.py
-├── preprocessamento.py
-├── README.md
-├── requirements.txt
-└── testes_exemplos.py
+│   └── ...                         # Cópias antigas antes de alterações
+├── mais_ou_menos/
+│   ├── avaliador.py                # Motor TF-IDF, nota, feedback e observações
+│   ├── exemplos.json               # Casos preparados para demonstração
+│   ├── main.py                     # CLI da versão clássica
+│   ├── preprocessamento.py         # Normalização, tokens, stopwords e stemming
+│   ├── test_avaliador.py           # Testes unitários da versão clássica
+│   └── testes_exemplos.py          # Executa exemplos e compara expectativa humana
+├── topzera/
+│   ├── avaliador_openai.py         # Motor semântico usando Azure OpenAI
+│   ├── main.py                     # CLI da versão com IA
+├── .env                            # Credenciais locais, não versionar
+├── .env.exemple                    # Modelo de variáveis de ambiente
+├── documentation.md                # Esta documentação técnica
+├── GUIA_TRABALHO_PLN.md            # Resumo do enunciado
+├── README.md                       # Guia único de uso
+└── requirements.txt                # Dependências do projeto
 ```
 
-Mapa do projeto em Mermaid:
-
-```mermaid
-flowchart LR
-    projeto["Did It Understand?"]
-
-    projeto --> cli["main.py<br/>CLI interativa"]
-    projeto --> avaliador["avaliador.py<br/>nota, similaridade e feedback"]
-    projeto --> prep["preprocessamento.py<br/>limpeza, tokens e stemming"]
-    projeto --> exemplos["exemplos.json<br/>cenários de demonstração"]
-    projeto --> runner["testes_exemplos.py<br/>roda exemplos preparados"]
-    projeto --> tests["tests/test_avaliador.py<br/>testes automatizados"]
-    projeto --> docs["README.md + documentation.md<br/>uso, entrega e documentação"]
-
-    cli --> avaliador
-    runner --> avaliador
-    avaliador --> prep
-    tests --> avaliador
-    tests --> prep
-    runner --> exemplos
-```
-
-## 4. Como instalar
-
-Recomendação:
-
-```bash
-python -m venv venv
-```
-
-No Windows PowerShell:
-
-```bash
-.\.venv\Scripts\python -m pip install -r requirements.txt
-```
-
-Forma genérica:
-
-```bash
-python -m pip install -r requirements.txt
-```
-
-## 5. Bibliotecas utilizadas
-
-### scikit-learn
-
-Usada em `avaliador.py`.
-
-Responsabilidade:
-
-- transformar texto pré-processado em vetor TF-IDF com `TfidfVectorizer`
-- apoiar o cálculo da similaridade do cosseno com `cosine_similarity`
-
-Por que usar:
-
-- é uma biblioteca consolidada para machine learning em Python
-- evita manter uma implementação manual de TF-IDF
-- facilita explicar o método com uma ferramenta real de mercado
-
-### nltk
-
-Usada em `preprocessamento.py`.
-
-Responsabilidade:
-
-- aplicar stemming em português com `SnowballStemmer("portuguese")`
-
-Por que usar:
-
-- aproxima variações da mesma família de palavras
-- por exemplo, `processar`, `processa` e `processando` ficam mais parecidas na comparação
-
-Trade-off:
-
-- stemming corta palavras em radicais aproximados
-- isso ajuda a comparar flexões, mas não entende sinônimos automaticamente
-
-### Unidecode
-
-Usada em `preprocessamento.py`.
-
-Responsabilidade:
-
-- remover marcas de acento
-- exemplo conceitual, uma palavra com acento é convertida para uma forma sem acento
-
-Por que usar:
-
-- respostas digitadas com ou sem acento ficam mais comparáveis
-
-### rich
-
-Usada em `main.py` e `testes_exemplos.py`.
-
-Responsabilidade:
-
-- exibir tabelas, painéis e textos formatados no terminal
-
-Por que usar:
-
-- deixa a apresentação do trabalho mais legível
-- melhora a demonstração em sala
-
-## 6. Como usar pelo terminal
-
-### Modo interativo
-
-Execute:
-
-```bash
-python main.py
-```
-
-O programa vai pedir:
-
-```text
-Pergunta:
-Resposta esperada:
-Resposta do usuario:
-```
-
-Exemplo de pergunta:
-
-```text
-O que é PLN?
-```
-
-Exemplo de resposta esperada:
-
-```text
-PLN é a área da computação e da inteligência artificial que desenvolve técnicas para processar, analisar e gerar linguagem humana, como textos e fala.
-```
-
-Exemplo de resposta do usuário:
-
-```text
-PLN é uma área da computação que usa técnicas para processar e analisar textos escritos por pessoas.
-```
-
-### Modo com argumentos
-
-Execute:
-
-```bash
-python main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "PLN é uma área que analisa texto e linguagem humana." --detalhes
-```
-
-### Opções do main.py
-
-`--pergunta`
-
-Pergunta apresentada ao aluno ou usuário.
-
-`--esperada`
-
-Resposta de referência, considerada correta ou ideal.
-
-`--usuario`
-
-Resposta que será avaliada.
-
-`--detalhes`
-
-Mostra tokens, radicais e palavras-chave.
-
-`--manter-stopwords`
-
-Desliga a remoção de stopwords.
-
-Use quando quiser demonstrar a diferença entre texto com palavras comuns e texto mais limpo.
-
-`--sem-stemming`
-
-Desliga o stemming do NLTK.
-
-Use para demonstrar o impacto da inteligência linguística simples.
-
-## 7. Como rodar exemplos prontos
-
-Execute:
-
-```bash
-python testes_exemplos.py
-```
-
-Esse script lê o arquivo `exemplos.json`, avalia cada cenário e exibe:
-
-- expectativa humana
-- resposta do sistema
-- nota
-- similaridade
-- palavras-chave encontradas
-- observações
-
-## 8. Como rodar testes automatizados
-
-Execute:
-
-```bash
-python -m unittest discover -s tests
-```
-
-Os testes verificam comportamentos centrais, como:
-
-- remoção de acentos e pontuação
-- aproximação de palavras com stemming
-- nota máxima para resposta igual à esperada
-- nota zero para resposta vazia
-- nota baixa para resposta errada
-
-## 9. Fluxo interno da avaliação
-
-O caminho da resposta dentro do sistema é este:
+## 4. Arquitetura geral
 
 ```mermaid
 flowchart TD
-    entrada["Texto original"]
-    normalizacao["Normalização<br/>minúsculas, acentos, pontuação e espaços"]
-    tokens["Tokenização"]
-    stopwords["Remoção de stopwords"]
-    stemming["Stemming<br/>SnowballStemmer do NLTK"]
-    tfidf["Vetorização TF-IDF<br/>TfidfVectorizer"]
-    similaridade["Similaridade do cosseno<br/>cosine_similarity"]
-    keywords["Cobertura de palavras-chave"]
-    nota["Nota final<br/>80% similaridade + 20% palavras-chave"]
-    feedback["Feedback<br/>Entendeu, Parcial ou Nao entendeu"]
+    usuario["Usuário"]
+    pergunta["Pergunta"]
+    esperada["Resposta esperada"]
+    resposta["Resposta do usuário"]
 
-    entrada --> normalizacao
-    normalizacao --> tokens
-    tokens --> stopwords
-    stopwords --> stemming
-    stemming --> tfidf
-    tfidf --> similaridade
-    tokens --> keywords
-    similaridade --> nota
+    usuario --> pergunta
+    usuario --> esperada
+    usuario --> resposta
+
+    pergunta --> classica["mais_ou_menos<br/>PLN clássico"]
+    esperada --> classica
+    resposta --> classica
+
+    pergunta --> ia["topzera<br/>Azure OpenAI"]
+    esperada --> ia
+    resposta --> ia
+
+    classica --> saida1["nota, feedback,<br/>similaridade TF-IDF,<br/>palavras-chave,<br/>observações"]
+    ia --> saida2["nota, feedback,<br/>similaridade semântica,<br/>justificativa,<br/>pontos, lacunas e alertas"]
+```
+
+## 5. Preparação do ambiente
+
+O padrão deste projeto é usar uma pasta chamada `venv`.
+
+Criar ambiente virtual, quando ainda não existir:
+
+```powershell
+python -m venv venv
+```
+
+Instalar as dependências do projeto:
+
+```powershell
+venv\Scripts\python -m pip install -r requirements.txt
+```
+
+Validar importações da versão com IA:
+
+```powershell
+venv\Scripts\python -m py_compile topzera\avaliador_openai.py topzera\main.py
+```
+
+## 6. Dependências
+
+### requirements.txt da raiz
+
+Contém as bibliotecas do projeto.
+
+Uso:
+
+- `scikit-learn` para TF-IDF e similaridade
+- `nltk` para stemming
+- `Unidecode` para normalizar acentos
+- `rich` para exibir tabelas e painéis no terminal
+- `openai` para instanciar `AzureOpenAI` e chamar o deployment configurado no Azure
+- `python-dotenv` para carregar variáveis do arquivo `.env`
+
+## 7. Versão 1, mais_ou_menos
+
+Esta é a versão baseada em PLN clássico.
+
+Fluxo:
+
+```mermaid
+flowchart TD
+    esperada["Resposta esperada"]
+    usuario["Resposta do usuário"]
+    prep1["Pré-processamento<br/>esperada"]
+    prep2["Pré-processamento<br/>usuário"]
+    tfidf["TF-IDF"]
+    cosseno["Similaridade do cosseno"]
+    keywords["Cobertura de palavras-chave"]
+    nota["Nota 0 a 100"]
+    feedback["Feedback final"]
+    obs["Observações"]
+
+    esperada --> prep1
+    usuario --> prep2
+    prep1 --> tfidf
+    prep2 --> tfidf
+    tfidf --> cosseno
+    prep1 --> keywords
+    prep2 --> keywords
+    cosseno --> nota
     keywords --> nota
     nota --> feedback
+    nota --> obs
 ```
 
-## 10. Como a nota é calculada
+## 8. Pré-processamento
 
-O sistema usa esta combinação:
+Arquivo:
 
 ```text
-nota_base = similaridade * 0.8 + cobertura_de_palavras_chave * 0.2
-nota_final = nota_base * 100
+mais_ou_menos/preprocessamento.py
 ```
 
-Na configuração padrão:
+Responsabilidade:
 
-- similaridade TF-IDF pesa `80%`
-- cobertura de palavras-chave pesa `20%`
-- nota `>= 70` vira `Entendeu`
-- nota `>= 30` e `< 70` vira `Parcial`
-- nota `< 30` vira `Nao entendeu`
+- transformar texto natural em uma representação mais fácil de comparar
 
-## 11. Arquivo preprocessamento.py
+Etapas principais:
 
-Responsabilidade geral:
-
-- preparar texto natural para comparação matemática
-
-### Constante STEMMER_PORTUGUES
-
-Instância do `SnowballStemmer` configurada para português.
-
-Uso:
-
-- gerar radicais de palavras
-- aproximar flexões, como `analisar` e `analisa`
-
-### Constante STOPWORDS_PADRAO
-
-Conjunto de palavras comuns em português.
-
-Uso:
-
-- remover termos muito frequentes, como artigos, pronomes e preposições
-- reduzir ruído antes do TF-IDF
-
-### Classe TextoProcessado
-
-Data class que guarda as versões de um texto após o pré-processamento.
-
-Campos:
-
-- `original`, texto recebido pela função
-- `normalizado`, texto em minúsculas, sem acentos e sem pontuação relevante
-- `tokens`, lista de palavras já filtradas
-- `tokens_comparacao`, lista usada no TF-IDF, normalmente com stemming
-- `texto_processado`, string montada a partir dos tokens de comparação
-
-### Função remover_acentos(texto)
-
-Remove acentos e marcas especiais usando `unidecode`.
-
-Entrada:
-
-- uma string
-
-Saída:
-
-- string normalizada sem acentos
+- converter para string
+- passar para minúsculas
+- remover acentos com `unidecode`
+- substituir pontuação por espaços
+- remover espaços repetidos
+- tokenizar
+- remover stopwords, quando configurado
+- aplicar stemming, quando configurado
 
 Exemplo conceitual:
 
 ```text
-"computação" vira "computacao"
+"Processamento de Linguagem Natural!"
 ```
 
-### Função normalizar_texto(texto)
+Pode virar uma lista próxima de:
 
-Aplica uma limpeza inicial no texto.
+```text
+["process", "lingu", "natural"]
+```
 
-O que faz:
+Isso é útil para comparação, mas não é uma frase humana. É uma representação matemática reduzida.
 
-- converte `None` para string vazia
-- transforma o conteúdo em string
-- deixa em minúsculas
-- remove acentos
-- substitui pontuação por espaço
-- remove espaços repetidos
+## 9. Avaliador clássico
 
-Por que existe:
+Arquivo:
 
-- para deixar respostas diferentes em um formato comparável
+```text
+mais_ou_menos/avaliador.py
+```
 
-### Função tokenizar(texto)
+Função principal:
 
-Quebra o texto normalizado em tokens.
+```text
+avaliar_resposta(pergunta, resposta_esperada, resposta_usuario, configuracao=None)
+```
 
-O que ela captura:
+Responsabilidades:
 
-- letras de `a` a `z`
-- números
+- validar configuração
+- recusar resposta esperada vazia
+- pré-processar resposta esperada
+- pré-processar resposta do usuário
+- extrair palavras-chave da resposta esperada
+- calcular similaridade TF-IDF
+- calcular cobertura de palavras-chave
+- combinar as métricas em uma nota
+- transformar nota em feedback
+- gerar observações para interpretação
 
-Retorno:
-
-- lista de strings
-
-### Função radicalizar_token(token)
-
-Aplica stemming em uma palavra.
-
-Entrada:
-
-- token individual
-
-Saída:
-
-- radical gerado pelo NLTK
-
-Observação:
-
-- o radical pode não ser uma palavra bonita para leitura humana
-- ele existe para comparação computacional
-
-### Função preprocessar_texto(texto, remover_stopwords, aplicar_stemming, stopwords)
-
-Função principal do módulo de pré-processamento.
-
-O que faz:
-
-- normaliza texto
-- tokeniza
-- remove stopwords, se configurado
-- aplica stemming, se configurado
-- devolve um objeto `TextoProcessado`
-
-Quando usar:
-
-- antes de comparar uma resposta esperada e uma resposta do usuário
-
-### Função extrair_palavras_chave(tokens, limite)
-
-Escolhe palavras importantes a partir dos tokens da resposta esperada.
-
-Como decide:
-
-- ignora tokens muito curtos
-- calcula frequência
-- prioriza palavras mais frequentes
-- preserva a ordem de primeira aparição como critério de desempate
-
-Uso no projeto:
-
-- calcular a cobertura de palavras-chave
-- exibir quais termos importantes o usuário mencionou
-
-## 12. Arquivo avaliador.py
-
-Responsabilidade geral:
-
-- receber textos pré-processados
-- calcular similaridade
-- calcular nota
-- classificar feedback
-- criar observações explicativas
-
-### Classe ConfiguracaoAvaliacao
-
-Guarda os parâmetros da avaliação.
-
-Campos principais:
-
-- `remover_stopwords`, liga ou desliga remoção de stopwords
-- `aplicar_stemming`, liga ou desliga stemming
-- `peso_similaridade`, peso da similaridade na nota
-- `peso_palavras_chave`, peso das palavras-chave na nota
-- `limite_palavras_chave`, quantidade máxima de palavras-chave extraídas
-- `limite_entendeu`, pontuação mínima para `Entendeu`
-- `limite_parcial`, pontuação mínima para `Parcial`
-
-### Método ConfiguracaoAvaliacao.soma_pesos()
-
-Retorna a soma dos pesos configurados.
-
-Uso:
-
-- normalizar a nota quando os pesos são combinados
-
-### Classe ResultadoAvaliacao
-
-Data class com todo o resultado da avaliação.
-
-Campos principais:
-
-- `pergunta`
-- `resposta_esperada`
-- `resposta_usuario`
-- `resposta_esperada_processada`
-- `resposta_usuario_processada`
-- `similaridade`
-- `cobertura_palavras_chave`
-- `nota`
-- `feedback`
-- `palavras_chave_esperadas`
-- `palavras_chave_encontradas`
-- `observacoes`
-
-### Função _validar_configuracao(configuracao)
-
-Helper interno.
-
-O que valida:
-
-- a soma dos pesos precisa ser maior que zero
-- o limite de `Parcial` não pode ser maior que o limite de `Entendeu`
-
-Por que existe:
-
-- impede configurações incoerentes antes de calcular nota
-
-### Função calcular_similaridade_tfidf(tokens_esperados, tokens_usuario)
-
-Calcula similaridade textual.
-
-Etapas:
-
-- junta tokens em duas strings
-- cria um `TfidfVectorizer`
-- gera matriz TF-IDF para resposta esperada e resposta do usuário
-- calcula similaridade do cosseno
-- retorna um número entre `0` e `1`, na maioria dos casos
-
-Se algum texto ficar vazio:
-
-- retorna `0.0`
-
-### Função _classificar_feedback(nota, configuracao)
-
-Helper interno.
-
-Transforma a nota num rótulo textual.
+## 10. Cálculo da nota clássica
 
 Regra padrão:
 
-- `70` ou mais, `Entendeu`
-- de `30` até `69.99`, `Parcial`
-- abaixo de `30`, `Nao entendeu`
-
-### Função _gerar_observacoes(...)
-
-Helper interno.
-
-Cria frases de interpretação para o resultado.
-
-Pode indicar:
-
-- resposta vazia
-- proximidade textual baixa, moderada ou alta
-- ausência de palavras-chave
-- cobertura parcial de palavras-chave
-- resposta curta demais
-- palavras-chave encontradas
-
-### Função avaliar_resposta(pergunta, resposta_esperada, resposta_usuario, configuracao)
-
-Função principal do sistema.
-
-Fluxo:
-
-- cria configuração padrão, se nenhuma configuração for recebida
-- valida a configuração
-- rejeita resposta esperada vazia
-- pré-processa resposta esperada
-- pré-processa resposta do usuário
-- extrai palavras-chave da resposta esperada
-- verifica quais palavras-chave aparecem na resposta do usuário
-- calcula cobertura de palavras-chave
-- calcula similaridade TF-IDF
-- combina similaridade e cobertura em uma nota
-- classifica feedback
-- gera observações
-- retorna `ResultadoAvaliacao`
-
-Essa é a melhor função para reutilizar caso alguém queira criar uma interface gráfica, uma API ou uma tela web.
-
-## 13. Arquivo main.py
-
-Responsabilidade geral:
-
-- oferecer uma interface de terminal para o usuário final
-
-### Variável console
-
-Objeto `Console` do Rich.
-
-Uso:
-
-- imprimir painéis, tabelas e textos formatados
-
-### Função construir_parser()
-
-Cria o parser de argumentos da CLI.
-
-Define as opções:
-
-- `--pergunta`
-- `--esperada`
-- `--usuario`
-- `--manter-stopwords`
-- `--detalhes`
-- `--sem-stemming`
-
-### Função ler_entrada_interativa()
-
-Solicita dados no terminal.
-
-Retorna:
-
-- pergunta
-- resposta esperada
-- resposta do usuário
-
-Quando é usada:
-
-- quando o usuário roda `python main.py` sem informar argumentos
-
-### Função exibir_resultado(resultado, mostrar_detalhes)
-
-Mostra a avaliação no terminal.
-
-Sempre exibe:
-
-- pergunta
-- nota final
-- feedback
-- similaridade TF-IDF
-- cobertura de palavras-chave
-- leitura do resultado
-
-Quando `mostrar_detalhes=True`, exibe também:
-
-- tokens da resposta esperada
-- tokens da resposta do usuário
-- radicais usados na comparação
-- palavras-chave esperadas
-- palavras-chave encontradas
-
-### Função main()
-
-Ponto de entrada da CLI.
-
-Fluxo:
-
-- constrói parser
-- lê argumentos
-- valida se `--pergunta`, `--esperada` e `--usuario` foram enviados juntos
-- entra no modo interativo quando faltam argumentos
-- cria `ConfiguracaoAvaliacao`
-- chama `avaliar_resposta`
-- chama `exibir_resultado`
-
-## 14. Arquivo testes_exemplos.py
-
-Responsabilidade geral:
-
-- rodar casos preparados em `exemplos.json`
-- apoiar a apresentação e a análise crítica
-
-### Constante ARQUIVO_EXEMPLOS
-
-Caminho do arquivo `exemplos.json`.
-
-### Variável console
-
-Objeto `Console` do Rich.
-
-Uso:
-
-- imprimir os resultados dos exemplos com melhor formatação
-
-### Função carregar_exemplos()
-
-Lê o JSON de exemplos.
-
-Retorno:
-
-- lista de dicionários com pergunta, resposta esperada, resposta do usuário e expectativa
-
-### Função main()
-
-Executa a bateria de exemplos.
-
-Fluxo:
-
-- carrega exemplos
-- avalia cada resposta
-- compara feedback do sistema com expectativa humana
-- monta tabela de resumo
-- imprime análise individual
-- imprime resumo final
-
-## 15. Arquivo tests/test_avaliador.py
-
-Responsabilidade geral:
-
-- proteger os comportamentos principais com testes automatizados
-
-### Classe TestPreprocessamento
-
-Testa funções de pré-processamento.
-
-### Método test_remove_acentos_e_pontuacao()
-
-Confirma que o texto fica tokenizado sem pontuação.
-
-### Método test_stemming_aproxima_variacoes_da_mesma_palavra()
-
-Confirma que o stemming aproxima palavras da mesma família.
-
-### Classe TestAvaliador
-
-Testa a avaliação final.
-
-### Método test_resposta_identica_recebe_nota_maxima()
-
-Confirma que uma resposta igual à esperada recebe nota `100.0` e feedback `Entendeu`.
-
-### Método test_resposta_vazia_recebe_nota_baixa()
-
-Confirma que resposta vazia recebe nota `0.0` e feedback `Nao entendeu`.
-
-### Método test_resposta_errada_fica_abaixo_do_limite_parcial()
-
-Confirma que uma resposta claramente errada fica abaixo do limite parcial.
-
-## 16. Arquivo exemplos.json
-
-Responsabilidade geral:
-
-- guardar cenários de demonstração
-
-Campos de cada exemplo:
-
-- `nome`, descrição curta do cenário
-- `pergunta`, pergunta do exercício
-- `resposta_esperada`, referência de resposta correta
-- `resposta_usuario`, texto avaliado pelo sistema
-- `expectativa`, julgamento humano esperado
-
-## 17. Como interpretar um resultado
-
-Exemplo de saída:
-
 ```text
-Nota final: 39.77/100
-Feedback: Parcial
-Similaridade TF-IDF: 37.21%
-Cobertura de palavras-chave: 50.00%
+nota_base = (similaridade * 0.8) + (cobertura_palavras_chave * 0.2)
+nota = nota_base * 100
 ```
 
-Leitura:
+Feedback padrão:
 
-- a nota final é a combinação entre similaridade e palavras-chave
-- a similaridade mostra proximidade entre os vetores TF-IDF
-- a cobertura mostra quantas palavras-chave esperadas apareceram
-- feedback parcial significa que houve alguma proximidade, mas não suficiente para considerar compreensão completa
+- nota `>= 70`: `Entendeu`
+- nota `>= 30` e `< 70`: `Parcial`
+- nota `< 30`: `Nao entendeu`
 
-## 18. Limitações conhecidas
+Fato: a similaridade TF-IDF observa distribuição de termos.
 
-O sistema não entende linguagem como uma pessoa.
+Inferência: se a resposta do usuário repete termos centrais da resposta esperada, a nota tende a subir.
 
-Limitações:
+Risco: uma resposta conceitualmente correta com palavras diferentes pode ficar com nota baixa.
+
+## 11. CLI clássica
+
+Arquivo:
+
+```text
+mais_ou_menos/main.py
+```
+
+Modo interativo:
+
+```powershell
+venv\Scripts\python mais_ou_menos\main.py
+```
+
+Modo por argumentos:
+
+```powershell
+venv\Scripts\python mais_ou_menos\main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "PLN analisa linguagem humana." --detalhes
+```
+
+Opções importantes:
+
+- `--pergunta`, informa a pergunta
+- `--esperada`, informa a resposta de referência
+- `--usuario`, informa a resposta avaliada
+- `--detalhes`, mostra tokens, radicais e palavras-chave
+- `--manter-stopwords`, mantém palavras comuns
+- `--sem-stemming`, desliga radicalização para comparar antes e depois
+
+## 12. Exemplos clássicos
+
+Arquivos:
+
+```text
+mais_ou_menos/exemplos.json
+mais_ou_menos/testes_exemplos.py
+```
+
+Executar:
+
+```powershell
+venv\Scripts\python mais_ou_menos\testes_exemplos.py
+```
+
+Uso na apresentação:
+
+- mostrar cenário
+- mostrar expectativa humana
+- mostrar resultado do sistema
+- explicar por que bateu ou divergiu
+
+## 13. Testes automatizados
+
+Arquivo:
+
+```text
+mais_ou_menos/test_avaliador.py
+```
+
+Executar:
+
+```powershell
+venv\Scripts\python -m unittest discover -s mais_ou_menos -p "test*.py"
+```
+
+Os testes cobrem comportamentos como:
+
+- remoção de acentos e pontuação
+- aproximação por stemming
+- resposta igual recebe nota máxima
+- resposta vazia recebe nota baixa
+- resposta errada fica abaixo do limite parcial
+
+## 14. Versão 2, topzera
+
+Esta é a versão com Azure OpenAI.
+
+Ela não substitui obrigatoriamente a versão clássica. Ela funciona como uma comparação mais semântica.
+
+Fluxo:
+
+```mermaid
+flowchart TD
+    env[".env"]
+    config["carregar_configuracao()"]
+    cliente["AzureOpenAI"]
+    prompt["pergunta + esperada + resposta do usuário"]
+    modelo["deployment no Azure"]
+    json["JSON do modelo"]
+    resultado["ResultadoAvaliacaoIA"]
+
+    env --> config
+    config --> cliente
+    prompt --> cliente
+    cliente --> modelo
+    modelo --> json
+    json --> resultado
+```
+
+## 15. Configuração do Azure OpenAI
+
+Arquivo de ambiente:
+
+```text
+.env
+```
+
+Variáveis esperadas:
+
+```env
+OPENAI_API_KEY=sua_chave_do_azure
+AZURE_ENDPOINT=https://seu-recurso.cognitiveservices.azure.com/
+AZURE_OPENAI_DEPLOYMENT=nome_do_seu_deployment
+AZURE_OPENAI_API_VERSION=2024-12-01-preview
+```
+
+Nomes aceitos pelo código:
+
+- chave: `AZURE_OPENAI_API_KEY` ou `OPENAI_API_KEY`
+- endpoint: `AZURE_OPENAI_ENDPOINT` ou `AZURE_ENDPOINT`
+- deployment: `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_MODEL`, `AZURE_DEPLOYMENT` ou `OPENAI_MODEL`
+- versão da API: `AZURE_OPENAI_API_VERSION` ou `OPENAI_API_VERSION`
+
+Ponto importante:
+
+```text
+model = nome do deployment no Azure
+```
+
+Não confunda com o nome público do modelo. Se no portal do Azure o deployment se chama `avaliador-aula`, é esse nome que precisa estar em `AZURE_OPENAI_DEPLOYMENT`.
+
+## 16. Endpoint do Azure
+
+O SDK espera o endpoint base do recurso:
+
+```env
+AZURE_ENDPOINT=https://seu-recurso.cognitiveservices.azure.com/
+```
+
+O código em `topzera/avaliador_openai.py` tenta normalizar URLs que vierem com caminho extra, por exemplo:
+
+```text
+https://seu-recurso.cognitiveservices.azure.com/openai/responses?api-version=...
+```
+
+Mesmo assim, a forma recomendada no `.env` é o endpoint base.
+
+## 17. Temperatura
+
+Por padrão, a versão `topzera` não envia `temperature`.
+
+Motivo:
+
+- alguns deployments aceitam apenas a temperatura padrão
+- nesses casos, enviar `temperature=0.0` pode causar erro `400`
+
+Se o deployment aceitar temperatura configurável, use:
+
+```env
+AZURE_OPENAI_TEMPERATURE=1
+```
+
+Opinião técnica: para este trabalho, a temperatura padrão é suficiente. O mais importante é que a avaliação seja explicável pelo JSON de saída.
+
+## 18. Avaliador com IA
+
+Arquivo:
+
+```text
+topzera/avaliador_openai.py
+```
+
+Elementos principais:
+
+- `ConfiguracaoAzureOpenAI`, guarda chave, endpoint, deployment, versão da API e temperatura opcional
+- `ResultadoAvaliacaoIA`, representa a avaliação retornada ao usuário
+- `carregar_configuracao()`, valida credenciais e parâmetros mínimos
+- `load_dotenv()`, chamado dentro da configuração para carregar o `.env` com `python-dotenv`
+- `normalizar_endpoint_azure()`, remove caminho `/openai/...` quando ele aparece no endpoint
+- `criar_cliente()`, instancia `AzureOpenAI`
+- `montar_mensagens()`, cria instrução de sistema e tarefa do usuário
+- `avaliar_resposta_com_ia()`, chama o modelo e monta o resultado final
+
+## 19. Formato esperado da IA
+
+O prompt pede um JSON neste formato:
+
+```json
+{
+  "nota": 0,
+  "feedback": "Parcial",
+  "similaridade_semantica": 0.0,
+  "justificativa": "texto curto",
+  "pontos_corretos": ["texto curto"],
+  "lacunas": ["texto curto"],
+  "alertas": ["texto curto"]
+}
+```
+
+O código normaliza a resposta:
+
+- limita nota entre `0` e `100`
+- limita similaridade entre `0.0` e `1.0`
+- converte feedback para um dos três rótulos esperados
+- transforma listas ausentes em listas vazias
+- rejeita JSON inválido com erro explícito
+
+## 20. CLI com IA
+
+Arquivo:
+
+```text
+topzera/main.py
+```
+
+Validar configuração sem chamar a API:
+
+```powershell
+venv\Scripts\python topzera\main.py --check-config
+```
+
+Modo interativo:
+
+```powershell
+venv\Scripts\python topzera\main.py
+```
+
+Modo por argumentos:
+
+```powershell
+venv\Scripts\python topzera\main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "É uma área que permite analisar textos de pessoas."
+```
+
+Saída esperada:
+
+- feedback
+- nota
+- similaridade semântica
+- justificativa
+- pontos corretos
+- lacunas
+- alertas
+
+## 21. Comparação técnica
+
+| Critério | `mais_ou_menos` | `topzera` |
+| --- | --- | --- |
+| Técnica | TF-IDF e cosseno | Modelo via Azure OpenAI |
+| Custo por avaliação | praticamente zero localmente | pode cobrar tokens na Azure |
+| Internet | não precisa para executar depois de instalado | precisa para chamar API |
+| Explicabilidade | alta, métricas simples | média, depende da justificativa do modelo |
+| Paráfrases | dificuldade maior | tendência a avaliar melhor |
+| Reprodutibilidade | alta | pode variar por modelo, deployment e configuração |
+| Alinhamento com aula básica | alto | funciona como evolução |
+| Manutenção | simples | exige credenciais, endpoint e deployment |
+
+## 22. Tratamento de erros
+
+Na versão clássica:
+
+- resposta esperada vazia gera `ValueError`
+- resposta do usuário vazia recebe nota baixa
+- configuração com pesos inválidos gera erro
+
+Na versão Azure OpenAI:
+
+- falta de chave gera erro de configuração
+- falta de endpoint gera erro de configuração
+- falta de deployment gera erro de configuração
+- ausência da biblioteca `openai` gera mensagem com comando de instalação
+- resposta JSON inválida gera erro específico
+- endpoint com caminho extra é normalizado antes de criar o cliente
+- `temperature` só é enviado quando configurado
+
+## 23. Validação recomendada
+
+Antes da apresentação:
+
+```powershell
+venv\Scripts\python -m unittest discover -s mais_ou_menos -p "test*.py"
+venv\Scripts\python -m py_compile topzera\avaliador_openai.py topzera\main.py
+venv\Scripts\python topzera\main.py --check-config
+```
+
+Depois, faça testes manuais com pelo menos:
+
+- resposta idêntica à esperada
+- resposta correta usando sinônimos
+- resposta incompleta
+- resposta errada, mas com palavras parecidas
+- resposta vaga
+- resposta com contradição
+
+## 24. Observabilidade e ambiente real
+
+Para um trabalho acadêmico, imprimir o resultado no terminal é suficiente.
+
+Para um ambiente real, seria recomendável adicionar:
+
+- logging de erro sem gravar chave de API
+- identificador de cada avaliação
+- tempo de resposta da API
+- contagem de avaliações por dia
+- custo estimado por turma ou por exercício
+- amostra de respostas revisadas por humano para calibrar a nota
+- testes de regressão com respostas reais anonimizadas
+
+Risco de negócio:
+
+- um avaliador injusto pode prejudicar estudantes ou usuários
+- uma chave exposta pode gerar custo indevido
+- um deployment errado pode quebrar a entrega no dia da apresentação
+
+Mitigação:
+
+- manter `.env` fora do Git
+- usar `--check-config` antes da demo
+- preparar exemplos offline da versão `mais_ou_menos`
+- explicar que a nota é apoio avaliativo, não veredito absoluto
+
+## 25. Limitações
+
+Limitações da versão clássica:
 
 - não entende contexto profundo
-- não entende ironia
-- não valida conhecimento factual externo
+- não entende intenção
+- não valida fatos externos
 - não reconhece todos os sinônimos
-- pode penalizar paráfrases corretas
-- pode favorecer respostas que repetem palavras-chave sem explicar bem
-- pode ser sensível à resposta esperada escolhida
+- pode favorecer repetição superficial de palavras-chave
+- pode punir uma resposta correta escrita com outro vocabulário
 
-## 19. Boas práticas para usar na apresentação
+Limitações da versão com IA:
 
-Recomendação:
+- depende do deployment do Azure
+- pode ter custo
+- pode ficar indisponível por rede, cota ou credencial
+- pode retornar uma justificativa convincente mesmo quando a nota merece revisão
+- precisa de validação humana em usos importantes
 
-- mostre uma resposta correta e direta
-- mostre uma resposta incompleta
-- mostre uma resposta errada
-- mostre uma resposta correta com palavras muito diferentes
-- explique pelo menos um erro do sistema
-- diga que similaridade textual não é compreensão real
+## 26. Sugestão de apresentação
 
-## 20. Possíveis melhorias futuras
+Roteiro recomendado:
 
-Melhorias sustentáveis:
+1. Explique a pergunta do trabalho, "a máquina entendeu?"
+2. Mostre rapidamente o fluxo de entrada e saída.
+3. Rode a versão `mais_ou_menos`.
+4. Explique pré-processamento, TF-IDF e cosseno.
+5. Rode uma resposta correta e uma errada.
+6. Rode uma paráfrase correta que a versão clássica avalia mal, se houver.
+7. Rode a mesma paráfrase na versão `topzera`.
+8. Compare os resultados.
+9. Explique os trade-offs, simplicidade e transparência contra custo e semântica.
+10. Conclua que a máquina calcula evidências de entendimento, mas a interpretação final precisa de senso crítico.
 
-- adicionar lematização em português
-- usar embeddings semânticos
-- criar interface web
-- salvar histórico de avaliações
-- permitir cadastro de várias respostas esperadas por pergunta
-- extrair palavras-chave com método estatístico mais robusto
-- melhorar mensagens para o aluno, apontando conceitos ausentes
-- criar testes com dados reais de respostas de estudantes
+## 27. Melhorias futuras
+
+Ideias sustentáveis:
+
+- criar uma suíte de testes para `topzera` usando mock do cliente Azure
+- salvar resultados em CSV para análise da turma
+- criar matriz de comparação entre nota humana, nota TF-IDF e nota da IA
+- adicionar embeddings como meio termo entre TF-IDF e juiz generativo
+- permitir várias respostas esperadas por pergunta
+- criar uma tela simples para professor revisar notas
+- adicionar rubricas explícitas por pergunta
+- estimar custo antes de avaliar uma lista grande de respostas
