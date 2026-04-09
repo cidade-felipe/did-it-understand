@@ -24,6 +24,7 @@ E retorna:
 ├── tests/
 │   └── test_avaliador.py      # Testes automatizados do pré-processamento e avaliador
 ├── avaliador.py               # Calcula TF-IDF, similaridade, nota e feedback
+├── documation.md              # Documentação técnica detalhada do projeto
 ├── exemplos.json              # Casos prontos para demonstração e análise crítica
 ├── main.py                    # Interface de terminal para usar o avaliador
 ├── preprocessamento.py        # Normalização, tokenização, stopwords e stemming
