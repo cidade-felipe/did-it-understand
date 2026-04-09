@@ -1,0 +1,44 @@
+[
+  {
+    "nome": "Resposta correta e direta",
+    "pergunta": "O que e PLN?",
+    "resposta_esperada": "PLN e a area da computacao que permite processar e analisar a linguagem humana.",
+    "resposta_usuario": "PLN e a area da computacao que processa e analisa a linguagem humana.",
+    "expectativa": "Entendeu"
+  },
+  {
+    "nome": "Resposta correta com outras palavras",
+    "pergunta": "O que e PLN?",
+    "resposta_esperada": "PLN e a area da computacao que permite processar e analisar a linguagem humana.",
+    "resposta_usuario": "E o estudo de tecnicas para o computador trabalhar com a lingua usada pelas pessoas no dia a dia.",
+    "expectativa": "Parcial"
+  },
+  {
+    "nome": "Resposta incompleta",
+    "pergunta": "O que e PLN?",
+    "resposta_esperada": "PLN e a area da computacao que permite processar e analisar a linguagem humana.",
+    "resposta_usuario": "E uma area da computacao que analisa linguagem.",
+    "expectativa": "Parcial"
+  },
+  {
+    "nome": "Palavras-chave sem explicacao",
+    "pergunta": "O que e PLN?",
+    "resposta_esperada": "PLN e a area da computacao que permite processar e analisar a linguagem humana.",
+    "resposta_usuario": "PLN, computacao, linguagem humana, analise.",
+    "expectativa": "Parcial"
+  },
+  {
+    "nome": "Resposta errada com termos parecidos",
+    "pergunta": "O que e PLN?",
+    "resposta_esperada": "PLN e a area da computacao que permite processar e analisar a linguagem humana.",
+    "resposta_usuario": "PLN e um programa que corrige ortografia automaticamente em qualquer texto.",
+    "expectativa": "Nao entendeu"
+  },
+  {
+    "nome": "Resposta vazia",
+    "pergunta": "O que e PLN?",
+    "resposta_esperada": "PLN e a area da computacao que permite processar e analisar a linguagem humana.",
+    "resposta_usuario": "",
+    "expectativa": "Nao entendeu"
+  }
+]
