@@ -65,16 +65,14 @@ def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: lis
         token_pattern=None,
     )
     matriz_tfidf = vetorizador.fit_transform([documento_esperado, documento_usuario])
-    matriz_similaridade = cosine_similarity(matriz_tfidf[0:1], matriz_tfidf[1:2])
+    matriz_similaridade = cosine_similarity(matriz_tfidf[:1], matriz_tfidf[1:2])
     return float(matriz_similaridade[0, 0])
 
 
 def _classificar_feedback(nota: float, configuracao: ConfiguracaoAvaliacao) -> str:
     if nota >= configuracao.limite_entendeu:
         return "Entendeu"
-    if nota >= configuracao.limite_parcial:
-        return "Parcial"
-    return "Nao entendeu"
+    return "Parcial" if nota >= configuracao.limite_parcial else "Nao entendeu"
 
 
 def _gerar_observacoes(
@@ -129,7 +127,7 @@ def avaliar_resposta(
     configuracao = configuracao or ConfiguracaoAvaliacao()
     _validar_configuracao(configuracao)
 
-    if not str(resposta_esperada).strip():
+    if not resposta_esperada.strip():
         raise ValueError("A resposta esperada nao pode ser vazia.")
 
     resposta_esperada_proc = preprocessar_texto(
