@@ -21,17 +21,15 @@ E retorna:
 ## Estrutura do projeto
 
 ```text
-did-it-understand/
-|- Backup/
-|  `- README.original.md
-|- avaliador.py
-|- exemplos.json
-|- main.py
-|- preprocessamento.py
-|- requirements.txt
-|- testes_exemplos.py
-|- tests/
-|  `- test_avaliador.py
+├── tests/
+│   └── test_avaliador.py      # Testes automatizados do pré-processamento e avaliador
+├── avaliador.py               # Calcula TF-IDF, similaridade, nota e feedback
+├── exemplos.json              # Casos prontos para demonstração e análise crítica
+├── main.py                    # Interface de terminal para usar o avaliador
+├── preprocessamento.py        # Normalização, tokenização, stopwords e stemming
+├── requirements.txt           # Bibliotecas Python usadas no projeto
+├── testes_exemplos.py         # Executa a bateria de exemplos do trabalho
+└── README.md                  # Documentação, execução e limites da abordagem
 ```
 
 ## Como a solução funciona
