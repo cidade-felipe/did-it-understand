@@ -38,6 +38,8 @@ E retorna:
 
 ```text
 did-it-understand/
+├── Backup/
+│   └── ...                     # Cópias anteriores dos arquivos alterados
 ├── mais_ou_menos/
 │   ├── avaliador.py             # Avaliação com TF-IDF, cosseno e palavras-chave
 │   ├── exemplos.json            # Exemplos para demonstração
@@ -48,8 +50,10 @@ did-it-understand/
 ├── topzera/
 │   ├── avaliador_openai.py      # Avaliação semântica com Azure OpenAI
 │   ├── main.py                  # Terminal da versão com IA
+├── .env                         # Credenciais locais e configuração
+├── .env.exemple                 # Exemplo de variáveis de ambiente
 ├── documentation.md             # Documentação técnica detalhada
-├── GUIA_TRABALHO_PLN.md         # Guia resumido do enunciado
+├── GUIA_TRABALHO.md             # Guia resumido do trabalho
 ├── requirements.txt             # Dependências do projeto
 └── README.md                    # Este guia único
 ```
