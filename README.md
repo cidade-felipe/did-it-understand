@@ -38,24 +38,24 @@ E retorna:
 
 ```text
 did-it-understand/
-├── Backup/
-│   └── ...                     # Cópias anteriores dos arquivos alterados
 ├── mais_ou_menos/
-│   ├── avaliador.py             # Avaliação com TF-IDF, cosseno e palavras-chave
-│   ├── exemplos.json            # Exemplos para demonstração
-│   ├── main.py                  # Terminal da versão TF-IDF
-│   ├── preprocessamento.py      # Limpeza, tokenização, stopwords e stemming
-│   ├── test_avaliador.py        # Testes automatizados
-│   └── testes_exemplos.py       # Roda os exemplos do trabalho
+│   ├── avaliador.py                # Motor de avaliação clássica
+│   ├── exemplos.json               # Casos prontos para demonstração
+│   ├── main.py                     # CLI da versão clássica
+│   ├── preprocessamento.py         # Normalização, tokenização e stemming
+│   ├── test_avaliador.py           # Testes unitários da versão clássica
+│   └── testes_exemplos.py          # Execução de cenários demonstrativos
 ├── topzera/
-│   ├── avaliador_openai.py      # Avaliação semântica com Azure OpenAI
-│   ├── main.py                  # Terminal da versão com IA
-├── .env                         # Credenciais locais e configuração
-├── .env.exemple                 # Exemplo de variáveis de ambiente
-├── documentation.md             # Documentação técnica detalhada
-├── GUIA_TRABALHO.md             # Guia resumido do trabalho
-├── requirements.txt             # Dependências do projeto
-└── README.md                    # Este guia único
+│   ├── avaliador_openai.py         # Avaliador semântico com Azure OpenAI
+│   └── main.py                     # CLI da versão com IA
+├── .env                            # Credenciais locais e configuração
+├── .env.exemple                    # Exemplo de variáveis de ambiente
+├── .gitignore
+├── documentacao_funcoes_pln.md     # Guia detalhado das funções
+├── documentation.md                # Esta documentação técnica
+├── LICENSE                         # Licença
+├── README.md                       # Guia de uso do projeto
+└── requirements.txt                # Dependências Python
 ```
 
 ## Preparar ambiente

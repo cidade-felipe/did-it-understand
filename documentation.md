@@ -4,7 +4,7 @@
 
 Trabalho acadêmico da disciplina de Inteligência Artificial.
 
-- Acadêmicos: Felipe Cidade Soares, Karolini Roncani Pedrozo Leonhard Henrique Carvalho Onofre e 
+- Acadêmicos: Felipe Cidade Soares, Karolini Roncani Pedrozo Leonhard Henrique Carvalho Onofre e
 - Professora: Eliane
 - Universidade: Universidade Federal de Santa Catarina (UFSC)
 - Data: 21 de abril de 2026
@@ -84,8 +84,6 @@ Esse desenho permite comparar uma abordagem de baixo custo e alta explicabilidad
 
 ```text
 did-it-understand/
-├── Backup/
-│   └── ...                         # Cópias anteriores dos arquivos alterados
 ├── mais_ou_menos/
 │   ├── avaliador.py                # Motor de avaliação clássica
 │   ├── exemplos.json               # Casos prontos para demonstração
@@ -98,8 +96,10 @@ did-it-understand/
 │   └── main.py                     # CLI da versão com IA
 ├── .env                            # Credenciais locais e configuração
 ├── .env.exemple                    # Exemplo de variáveis de ambiente
+├── .gitignore
+├── documentacao_funcoes_pln.md     # Guia detalhado das funções
 ├── documentation.md                # Esta documentação técnica
-├── GUIA_TRABALHO.md                # Guia resumido do trabalho
+├── LICENSE                         # Licença
 ├── README.md                       # Guia de uso do projeto
 └── requirements.txt                # Dependências Python
 ```
