@@ -26,6 +26,11 @@ class ConfiguracaoAvaliacao:
     limite_parcial: float = 30.0
 
     def soma_pesos(self) -> float:
+        """Retorna a soma dos pesos usados na composicao da nota final.
+
+        Centralizar esse calculo em um unico ponto evita divergencia entre a
+        validacao da configuracao e a formula usada para gerar a nota.
+        """
         return self.peso_similaridade + self.peso_palavras_chave
 
 
@@ -46,6 +51,19 @@ class ResultadoAvaliacao:
 
 
 def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
+    """Valida se a configuracao permite uma avaliacao coerente.
+
+    A funcao protege o pipeline contra pesos inconsistentes e contra limites
+    de classificacao invertidos, o que poderia gerar notas validas do ponto de
+    vista numerico, mas feedbacks semanticamente errados.
+
+    Args:
+        configuracao: Parametros que controlam o calculo da nota e do feedback.
+
+    Raises:
+        ValueError: Quando a soma dos pesos e invalida ou os limites de
+            classificacao estao incoerentes.
+    """
     if configuracao.soma_pesos() <= 0:
         raise ValueError("A soma dos pesos precisa ser maior que zero.")
     if configuracao.limite_parcial > configuracao.limite_entendeu:
@@ -53,6 +71,21 @@ def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
 
 
 def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: list[str]) -> float:
+    """Calcula a similaridade vetorial entre duas listas de tokens.
+
+    O texto esperado e o texto do usuario sao transformados em documentos
+    artificiais para que o TF-IDF compare a distribuicao dos termos. O retorno
+    fica entre 0.0 e 1.0 e serve como um sinal de proximidade textual, nao de
+    compreensao semantica completa.
+
+    Args:
+        tokens_esperados: Tokens derivados da resposta de referencia.
+        tokens_usuario: Tokens derivados da resposta enviada pelo usuario.
+
+    Returns:
+        Similaridade do cosseno entre os vetores TF-IDF dos dois documentos.
+        Retorna 0.0 quando algum dos lados fica vazio apos o pre-processamento.
+    """
     documento_esperado = " ".join(tokens_esperados)
     documento_usuario = " ".join(tokens_usuario)
     if not documento_esperado or not documento_usuario:
@@ -70,6 +103,16 @@ def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: lis
 
 
 def _classificar_feedback(nota: float, configuracao: ConfiguracaoAvaliacao) -> str:
+    """Traduz a nota numerica em uma categoria de feedback.
+
+    Args:
+        nota: Nota final ja normalizada na escala de 0 a 100.
+        configuracao: Configuracao com os limites que separam os niveis
+            "Entendeu", "Parcial" e "Nao entendeu".
+
+    Returns:
+        Rotulo textual apropriado para a faixa em que a nota se encontra.
+    """
     if nota >= configuracao.limite_entendeu:
         return "Entendeu"
     return "Parcial" if nota >= configuracao.limite_parcial else "Nao entendeu"
@@ -82,6 +125,26 @@ def _gerar_observacoes(
     cobertura_palavras_chave: float,
     palavras_chave_encontradas: list[str],
 ) -> list[str]:
+    """Gera observacoes textuais para ajudar a interpretar a nota.
+
+    As observacoes resumem heuristicas importantes do avaliador, como
+    proximidade textual, cobertura das palavras-chave centrais e diferenca de
+    tamanho entre as respostas. Esse resumo reduz o risco de tratar a nota como
+    caixa-preta durante apresentacoes, depuracao e ajustes de parametro.
+
+    Args:
+        resposta_esperada: Estrutura processada da resposta de referencia.
+        resposta_usuario: Estrutura processada da resposta enviada pelo usuario.
+        similaridade: Similaridade TF-IDF calculada entre as respostas.
+        cobertura_palavras_chave: Fracao das palavras-chave esperadas que foram
+            detectadas na resposta do usuario.
+        palavras_chave_encontradas: Lista efetivamente reconhecida no texto do
+            usuario, ja considerando o uso de radicais.
+
+    Returns:
+        Lista ordenada de observacoes em linguagem natural para complementar a
+        interpretacao da nota final.
+    """
     observacoes: list[str] = []
 
     if not resposta_usuario.tokens:
@@ -124,6 +187,30 @@ def avaliar_resposta(
     resposta_usuario: str,
     configuracao: ConfiguracaoAvaliacao | None = None,
 ) -> ResultadoAvaliacao:
+    """Avalia o quanto a resposta do usuario se aproxima da resposta esperada.
+
+    O fluxo combina pre-processamento linguistico, similaridade TF-IDF e
+    cobertura de palavras-chave para produzir uma nota de 0 a 100, um feedback
+    categorizado e observacoes explicativas. A estrategia privilegia
+    simplicidade, interpretabilidade e baixo custo computacional, o que e util
+    para demostracoes e trabalhos academicos.
+
+    Args:
+        pergunta: Enunciado associado a resposta, preservado no resultado para
+            contextualizacao.
+        resposta_esperada: Texto usado como referencia para a avaliacao.
+        resposta_usuario: Texto produzido pelo usuario e submetido a analise.
+        configuracao: Parametros opcionais para ajustar pesos, limites e regras
+            de pre-processamento. Quando ausente, usa a configuracao padrao.
+
+    Returns:
+        Estrutura completa com nota, feedback, metricas intermediarias e
+        artefatos de pre-processamento, permitindo auditoria do resultado.
+
+    Raises:
+        ValueError: Quando a resposta esperada e vazia ou a configuracao e
+            inconsistente.
+    """
     configuracao = configuracao or ConfiguracaoAvaliacao()
     _validar_configuracao(configuracao)
 

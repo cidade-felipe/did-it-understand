@@ -38,6 +38,20 @@ class ResultadoAvaliacaoIA:
 
 
 def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
+    """Le configuracao do ambiente e monta o objeto de acesso ao Azure OpenAI.
+
+    A funcao busca nomes alternativos de variavel para reduzir atrito entre
+    ambientes, normaliza o endpoint e converte a temperatura para um tipo
+    seguro. Se algum campo obrigatorio estiver ausente, a falha acontece cedo,
+    com mensagem explicita.
+
+    Returns:
+        Estrutura tipada com credenciais e parametros operacionais da API.
+
+    Raises:
+        RuntimeError: Quando faltam variaveis obrigatorias ou quando a
+            temperatura configurada nao pode ser convertida para numero.
+    """
     load_dotenv()
 
     api_key = obter_env("AZURE_OPENAI_API_KEY", "OPENAI_API_KEY")
@@ -74,11 +88,32 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
 
 
 def obter_env(*nomes: str) -> str:
+    """Retorna o primeiro valor de ambiente valido ou string vazia.
+
+    Essa funcao simplifica chamadas em que o codigo prefere trabalhar sempre
+    com ``str``, mesmo quando nenhuma variavel configurada foi encontrada.
+
+    Args:
+        *nomes: Variaveis de ambiente candidatas, em ordem de prioridade.
+
+    Returns:
+        Primeiro valor nao vazio encontrado, ou string vazia caso todos os
+        nomes consultados estejam ausentes.
+    """
     valor = obter_env_opcional(*nomes)
     return valor or ""
 
 
 def obter_env_opcional(*nomes: str) -> str | None:
+    """Procura a primeira variavel de ambiente nao vazia entre varios nomes.
+
+    Args:
+        *nomes: Lista ordenada de chaves que podem conter a configuracao.
+
+    Returns:
+        Valor limpo da primeira variavel encontrada, ou ``None`` quando nenhuma
+        delas estiver definida com conteudo util.
+    """
     for nome in nomes:
         valor = os.getenv(nome)
         if valor and valor.strip():
@@ -87,6 +122,16 @@ def obter_env_opcional(*nomes: str) -> str | None:
 
 
 def carregar_temperatura() -> float | None:
+    """Carrega a temperatura opcional do modelo a partir do ambiente.
+
+    Returns:
+        Valor em ponto flutuante quando a configuracao existe, ou ``None`` para
+        deixar a API operar com o padrao do provedor.
+
+    Raises:
+        RuntimeError: Quando o valor informado nao pode ser interpretado como
+            numero.
+    """
     valor = os.getenv("AZURE_OPENAI_TEMPERATURE")
     if not valor or not valor.strip():
         return None
@@ -98,6 +143,19 @@ def carregar_temperatura() -> float | None:
 
 
 def normalizar_endpoint_azure(endpoint: str) -> str:
+    """Normaliza o endpoint base do Azure OpenAI.
+
+    Alguns usuarios informam URLs completas contendo sufixos como ``/openai`` ou
+    rotas de deployment. Esta funcao remove esses trechos para preservar apenas
+    o endpoint base aceito pelo cliente oficial e garante a barra final.
+
+    Args:
+        endpoint: Valor bruto informado no ambiente.
+
+    Returns:
+        Endpoint base limpo, terminado com ``/``. Retorna string vazia quando a
+        entrada nao possui conteudo util.
+    """
     endpoint = endpoint.strip()
     if not endpoint:
         return ""
@@ -114,6 +172,23 @@ def normalizar_endpoint_azure(endpoint: str) -> str:
 
 
 def criar_cliente(configuracao: ConfiguracaoAzureOpenAI):
+    """Instancia o cliente do Azure OpenAI sob demanda.
+
+    O import tardio evita falha de importacao em cenarios onde o usuario apenas
+    deseja validar configuracao ou inspecionar o codigo sem ter a dependencia
+    instalada.
+
+    Args:
+        configuracao: Credenciais e parametros necessarios para abrir conexao
+            com a API do Azure OpenAI.
+
+    Returns:
+        Cliente configurado para chamadas de chat completions.
+
+    Raises:
+        RuntimeError: Quando a biblioteca ``openai`` nao esta instalada no
+            ambiente virtual do projeto.
+    """
     try:
         from openai import AzureOpenAI
     except ModuleNotFoundError as erro:
@@ -135,6 +210,29 @@ def avaliar_resposta_com_ia(
     resposta_usuario: str,
     configuracao: ConfiguracaoAzureOpenAI | None = None,
 ) -> ResultadoAvaliacaoIA:
+    """Avalia semanticamente a resposta do usuario via Azure OpenAI.
+
+    O metodo valida entradas obrigatorias, monta a chamada para o modelo com um
+    schema JSON restrito e depois sanitiza a resposta para uma estrutura tipada.
+    Esse desenho reduz risco de consumo inconsistente da API e facilita
+    rastrear o motivo da nota gerada pelo modelo.
+
+    Args:
+        pergunta: Enunciado que contextualiza a avaliacao.
+        resposta_esperada: Resposta de referencia usada como criterio.
+        resposta_usuario: Resposta submetida pelo usuario para comparacao.
+        configuracao: Configuracao opcional. Quando omitida, e carregada do
+            ambiente atual.
+
+    Returns:
+        Resultado estruturado com nota, feedback, similaridade semantica e
+        justificativas complementares.
+
+    Raises:
+        ValueError: Quando pergunta ou respostas obrigatorias sao vazias.
+        RuntimeError: Quando a configuracao ou a dependencia da API sao
+            insuficientes para executar a chamada.
+    """
     if not pergunta.strip():
         raise ValueError("A pergunta nao pode ser vazia.")
     if not resposta_esperada.strip():
@@ -171,6 +269,20 @@ def montar_mensagens(
     resposta_esperada: str,
     resposta_usuario: str,
 ) -> list[dict[str, str]]:
+    """Constroi as mensagens enviadas ao modelo de linguagem.
+
+    O prompt de sistema restringe o comportamento esperado do avaliador e o
+    formato de saida. A mensagem de usuario injeta o contexto especifico do
+    exercicio, mantendo a estrutura da requisicao previsivel para depuracao.
+
+    Args:
+        pergunta: Enunciado da atividade.
+        resposta_esperada: Gabarito ou resposta de referencia.
+        resposta_usuario: Resposta fornecida pelo aluno ou usuario final.
+
+    Returns:
+        Lista de mensagens no formato aceito pela API de chat completions.
+    """
     instrucao_sistema = """
 Voce e um avaliador de respostas educacionais.
 Compare a resposta do aluno com a resposta esperada.
@@ -221,6 +333,20 @@ def montar_resultado(
     resposta_usuario: str,
     dados: dict[str, Any],
 ) -> ResultadoAvaliacaoIA:
+    """Converte o JSON do modelo em uma estrutura tipada e segura.
+
+    A funcao aplica normalizacao defensiva em campos numericos e textuais para
+    reduzir impacto de respostas parcialmente fora do schema esperado.
+
+    Args:
+        pergunta: Enunciado associado a avaliacao.
+        resposta_esperada: Resposta de referencia preservada no resultado.
+        resposta_usuario: Resposta do usuario preservada no resultado.
+        dados: Objeto JSON retornado pelo modelo apos parsing.
+
+    Returns:
+        Resultado final pronto para consumo pela CLI ou por futuras integracoes.
+    """
     nota = limitar_float(dados.get("nota", 0), minimo=0.0, maximo=100.0)
     similaridade = limitar_float(dados.get("similaridade_semantica", nota / 100), minimo=0.0, maximo=1.0)
     feedback = normalizar_feedback(str(dados.get("feedback", "")), nota)
@@ -240,6 +366,18 @@ def montar_resultado(
 
 
 def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
+    """Converte o conteudo textual do modelo em um dicionario JSON valido.
+
+    Args:
+        conteudo: Texto bruto retornado pelo modelo.
+
+    Returns:
+        Dicionario com os campos de avaliacao fornecidos pela IA.
+
+    Raises:
+        ValueError: Quando o modelo nao retorna JSON valido ou devolve um tipo
+            diferente de objeto.
+    """
     try:
         dados = json.loads(conteudo)
     except JSONDecodeError as erro:
@@ -251,6 +389,17 @@ def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
 
 
 def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
+    """Converte um valor para ``float`` e restringe ao intervalo permitido.
+
+    Args:
+        valor: Valor bruto retornado pela API ou por outra etapa do pipeline.
+        minimo: Limite inferior aceito.
+        maximo: Limite superior aceito.
+
+    Returns:
+        Numero convertido e ajustado para permanecer entre ``minimo`` e
+        ``maximo``. Quando a conversao falha, usa o limite inferior.
+    """
     try:
         numero = float(valor)
     except (TypeError, ValueError):
@@ -259,6 +408,19 @@ def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
 
 
 def normalizar_feedback(feedback_modelo: str, nota: float) -> str:
+    """Padroniza o feedback textual em uma taxonomia fixa do projeto.
+
+    A normalizacao tolera variacoes comuns de rotulo produzidas pelo modelo e,
+    quando necessario, cai para uma inferencia baseada na nota numerica.
+
+    Args:
+        feedback_modelo: Rotulo textual original vindo do modelo.
+        nota: Nota numerica usada como fallback para classificacao.
+
+    Returns:
+        Um dos tres rotulos oficiais: ``Entendeu``, ``Parcial`` ou
+        ``Nao entendeu``.
+    """
     feedback_limpo = feedback_modelo.strip().lower()
     if feedback_limpo in {"entendeu", "entende", "correto"}:
         return "Entendeu"
@@ -273,6 +435,16 @@ def normalizar_feedback(feedback_modelo: str, nota: float) -> str:
 
 
 def normalizar_lista(valor: Any) -> list[str]:
+    """Converte um campo potencialmente heterogeneo em lista limpa de strings.
+
+    Args:
+        valor: Valor bruto retornado pela API para campos como pontos corretos,
+            lacunas ou alertas.
+
+    Returns:
+        Lista contendo apenas itens nao vazios, convertidos para string.
+        Retorna lista vazia quando a entrada nao e uma lista valida.
+    """
     if not isinstance(valor, list):
         return []
     return [str(item).strip() for item in valor if str(item).strip()]

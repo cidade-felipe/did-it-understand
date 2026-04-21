@@ -16,6 +16,16 @@ console = Console()
 
 
 def construir_parser() -> argparse.ArgumentParser:
+    """Monta o parser da linha de comando para o avaliador local.
+
+    O parser concentra as opcoes que controlam entrada de dados e modo de
+    exibicao, reduzindo duplicacao e mantendo o contrato da CLI explicito para
+    uso manual, scripts e demonstracoes.
+
+    Returns:
+        Instancia de ``ArgumentParser`` pronta para interpretar os argumentos
+        suportados por esta interface.
+    """
     parser = argparse.ArgumentParser(
         description="Avalia se uma resposta do usuario esta proxima da resposta esperada.",
     )
@@ -41,6 +51,15 @@ def construir_parser() -> argparse.ArgumentParser:
 
 
 def ler_entrada_interativa() -> tuple[str, str, str]:
+    """Coleta pergunta e respostas diretamente do terminal.
+
+    Esse caminho e usado quando a CLI e executada sem argumentos, o que facilita
+    testes rapidos e apresentacoes sem exigir que o usuario memorize flags.
+
+    Returns:
+        Tupla com pergunta, resposta esperada e resposta do usuario, sempre com
+        espacos excedentes removidos nas extremidades.
+    """
     console.print(Panel.fit("Modo interativo: avaliador de respostas com PLN", title="Did It Understand?"))
     pergunta = input("Pergunta: ").strip()
     resposta_esperada = input("Resposta esperada: ").strip()
@@ -49,6 +68,19 @@ def ler_entrada_interativa() -> tuple[str, str, str]:
 
 
 def exibir_resultado(resultado: ResultadoAvaliacao, mostrar_detalhes: bool = False) -> None:
+    """Renderiza o resultado da avaliacao em formato amigavel no terminal.
+
+    A tabela principal resume as metricas mais importantes para leitura rapida.
+    Quando ``mostrar_detalhes`` esta habilitado, a funcao tambem exibe os
+    artefatos do pre-processamento e as observacoes geradas pelo avaliador,
+    o que ajuda a explicar como a nota foi formada.
+
+    Args:
+        resultado: Objeto retornado pelo motor de avaliacao com todos os dados
+            relevantes da analise.
+        mostrar_detalhes: Define se os detalhes tecnicos do processamento devem
+            ser impressos junto ao resumo executivo.
+    """
     tabela = Table(title="Resultado da avaliacao")
     tabela.add_column("Metrica")
     tabela.add_column("Valor", justify="right")
@@ -81,6 +113,13 @@ def exibir_resultado(resultado: ResultadoAvaliacao, mostrar_detalhes: bool = Fal
 
 
 def main() -> None:
+    """Executa o fluxo principal da CLI do avaliador baseado em PLN.
+
+    A funcao decide entre modo interativo e modo por argumentos, valida se a
+    entrada esta completa, monta a configuracao operacional e delega a analise
+    ao modulo avaliador. O objetivo e concentrar a orquestracao da interface em
+    um unico ponto facil de manter.
+    """
     parser = construir_parser()
     args = parser.parse_args()
 

@@ -17,10 +17,26 @@ console = Console()
 
 
 def carregar_exemplos() -> list[dict[str, str]]:
+    """Carrega a bateria de exemplos usada nas demonstracoes do projeto.
+
+    O arquivo JSON centraliza cenarios prontos para comparacao entre expectativa
+    humana e resultado do sistema, o que facilita reproducao durante testes
+    manuais, apresentacoes e analises criticas.
+
+    Returns:
+        Lista de dicionarios com pergunta, respostas e expectativa associada a
+        cada cenario.
+    """
     return json.loads(ARQUIVO_EXEMPLOS.read_text(encoding="utf-8"))
 
 
 def main() -> None:
+    """Executa todos os exemplos cadastrados e imprime um resumo comparativo.
+
+    A funcao funciona como uma bateria demonstrativa de casos conhecidos,
+    destacando o comportamento do sistema em cada cenario e quantificando
+    quantas vezes o feedback automatico bateu com a expectativa humana.
+    """
     exemplos = carregar_exemplos()
     acertos = 0
     tabela = Table(title="Bateria de exemplos")
