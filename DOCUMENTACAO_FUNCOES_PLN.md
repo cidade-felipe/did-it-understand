@@ -2,22 +2,30 @@
 
 ## 1. Objetivo deste documento
 
-Este documento explica, função por função, as duas formas implementadas no projeto **Did It Understand?** para avaliar se uma resposta do usuário está próxima de uma resposta esperada.
+Este documento explica, função por função, as duas formas de avaliação implementadas no projeto **Did It Understand?** e a camada de interface gráfica que orquestra essas avaliações para uso humano.
 
-As duas abordagens são:
+As formas de uso do projeto são:
 
-- `mais_ou_menos`, abordagem clássica de PLN com pré-processamento, TF-IDF, similaridade do cosseno e cobertura de palavras-chave.
-- `topzera`, abordagem semântica com Azure OpenAI, em que um modelo de linguagem avalia a resposta com base no significado.
+- `mais_ou_menos`, abordagem clássica de PLN com pré-processamento, TF-IDF, similaridade do cosseno e cobertura de palavras-chave;
+- `topzera`, abordagem semântica com Azure OpenAI, em que um modelo de linguagem avalia a resposta com base no significado;
+- `gui.py`, interface gráfica em Tkinter que unifica os dois motores, sem duplicar a lógica de avaliação.
 
-Fato: as duas versões recebem pergunta, resposta esperada e resposta do usuário.
+Fato:
 
-Fato: as duas retornam uma avaliação, mas usam critérios diferentes.
+- os dois motores recebem pergunta, resposta esperada e resposta do usuário;
+- a GUI não cria uma terceira regra de correção, ela só coordena entrada, execução e apresentação.
 
-Inferência: a versão clássica é melhor para explicar conceitos básicos de PLN, enquanto a versão com IA é melhor para lidar com respostas escritas com outras palavras.
+Inferência:
 
-Opinião técnica: para apresentação do trabalho, vale mostrar as duas versões juntas, porque isso deixa claro o trade-off entre transparência, custo, dependência externa e capacidade semântica.
+- a versão clássica é melhor para explicar conceitos básicos de PLN;
+- a versão com IA é melhor para lidar com respostas escritas com outras palavras;
+- a GUI reduz atrito operacional e acelera apresentação, teste manual e demonstração.
 
-## 2. Visão geral das duas formas
+Opinião técnica:
+
+- para apresentação do trabalho, vale mostrar os dois motores por trás de uma interface integrada, porque isso evidencia não só o algoritmo, mas também a maturidade de uso da solução.
+
+## 2. Visão geral das formas de uso
 
 ### 2.1. Forma 1: `mais_ou_menos`
 
@@ -52,6 +60,23 @@ Ela trabalha com estas etapas:
 7. Normaliza nota, feedback, similaridade e listas explicativas.
 
 Em termos simples, ela tenta avaliar significado, lacunas, contradições e pontos corretos.
+
+### 2.3. Forma 3: `gui.py`
+
+Essa camada usa Tkinter para oferecer uma aplicação desktop que reaproveita os dois motores anteriores.
+
+Ela trabalha com estas etapas:
+
+1. Coleta pergunta, gabarito e resposta do usuário.
+2. Permite alternar entre o modo textual e o modo semântico.
+3. Carrega exemplos prontos para demonstração.
+4. Valida entradas mínimas antes da execução.
+5. Executa a avaliação em background para não travar a tela.
+6. Adapta o retorno do motor para um formato visual único.
+7. Mostra nota, feedback, métricas e leitura técnica.
+8. Verifica a configuração do Azure OpenAI sem consumir tokens.
+
+Em termos simples, ela transforma os motores em uma ferramenta mais utilizável para apresentação, experimentação e correção manual.
 
 ## 3. Funções da versão `mais_ou_menos`
 
@@ -995,32 +1020,298 @@ Por que existe:
 - permite que erros sejam mostrados sem quebrar o terminal com stack trace;
 - retorna código de saída útil para automação.
 
-## 9. Comparação prática entre as funções centrais
+## 9. Funções da interface gráfica
 
-| Parte do problema | `mais_ou_menos` | `topzera` |
-| --- | --- | --- |
-| Entrada | `main()` e `ler_entrada_interativa()` | `main()` e `ler_entrada_interativa()` |
-| Preparação | `preprocessar_texto()` | `montar_mensagens()` |
-| Núcleo da avaliação | `avaliar_resposta()` | `avaliar_resposta_com_ia()` |
-| Métrica principal | `calcular_similaridade_tfidf()` | julgamento do modelo via API |
-| Explicação | `_gerar_observacoes()` | `justificativa`, `pontos_corretos`, `lacunas`, `alertas` |
-| Padronização do resultado | `ResultadoAvaliacao` | `ResultadoAvaliacaoIA` |
-| Validação | `_validar_configuracao()` | `carregar_configuracao()` e `carregar_resultado_json()` |
-| Exibição | `exibir_resultado()` | `exibir_resultado()` |
+### 9.1. Arquivo `gui.py`
 
-## 10. Melhor forma de explicar o trabalho
+Esse arquivo contém a interface gráfica que integra os dois avaliadores do projeto em uma única aplicação desktop.
+
+Papel arquitetural:
+
+- coletar dados de entrada;
+- permitir escolha entre `mais_ou_menos` e `topzera`;
+- adaptar saídas diferentes para um formato visual comum;
+- exibir métricas, leitura técnica e mensagens de erro;
+- evitar travamento visual em operações mais lentas.
+
+Fato:
+
+- a GUI reaproveita diretamente `avaliar_resposta()` e `avaliar_resposta_com_ia()`.
+
+Inferência:
+
+- isso reduz risco de a interface mostrar um critério diferente do usado nas CLIs.
+
+### 9.2. Classe `ResultadoTela`
+
+Essa classe organiza o resultado já pronto para exibição na GUI.
+
+Campos:
+
+- `modo`, nome do avaliador usado;
+- `nota`, nota final;
+- `feedback`, classificação textual;
+- `resumo`, leitura curta do resultado;
+- `detalhes`, bloco técnico mostrado no painel lateral;
+- `metricas`, lista de indicadores para os cards da interface.
+
+Por que existe:
+
+- desacopla o formato interno dos motores do formato visual da tela;
+- evita espalhar regras de apresentação pela interface inteira;
+- simplifica a manutenção da GUI.
+
+### 9.3. `carregar_exemplos() -> list[dict[str, str]]`
+
+Lê `mais_ou_menos/exemplos.json` para abastecer a GUI com cenários prontos.
+
+Por que existe:
+
+- acelera demonstração do projeto;
+- reaproveita a base de exemplos já usada na versão clássica;
+- reduz esforço manual para montar cenários durante apresentação.
+
+### 9.4. `formatar_feedback(feedback: str) -> str`
+
+Padroniza variações de feedback para uma forma amigável na interface.
+
+Por que existe:
+
+- evita inconsistência visual entre `Nao entendeu` e `Não entendeu`;
+- protege a experiência de uso contra diferenças de acentuação ou origem do dado.
+
+### 9.5. `cor_por_nota(nota: float) -> str`
+
+Escolhe a cor da interface com base na faixa da nota.
+
+Regra:
+
+- `>= 70`: cor positiva;
+- `>= 30`: cor intermediária;
+- abaixo de `30`: cor de alerta.
+
+Por que existe:
+
+- melhora leitura rápida;
+- transforma a nota em um sinal visual imediato.
+
+### 9.6. `montar_bloco_lista(titulo: str, itens: list[str], vazio: str) -> list[str]`
+
+Converte listas como `pontos_corretos`, `lacunas` e `alertas` em blocos de texto legíveis no painel técnico.
+
+Por que existe:
+
+- evita duplicação de lógica de formatação;
+- garante que a interface trate listas vazias de forma compreensível.
+
+### 9.7. Classe `DidItUnderstandGUI`
+
+Essa classe representa a aplicação desktop.
+
+Opinião técnica:
+
+- documentar os métodos centrais dessa classe é mais útil do que listar todos os helpers visuais, porque o maior valor para manutenção está na orquestração, validação e adaptação do resultado.
+
+### 9.8. `__init__() -> None`
+
+Inicializa a janela, o estado da aplicação e a interface principal.
+
+Ela faz:
+
+1. configura título, tamanho e cores da janela;
+2. carrega exemplos;
+3. cria variáveis de estado da UI;
+4. aplica estilos `ttk`;
+5. monta a interface;
+6. renderiza o estado inicial.
+
+Por que existe:
+
+- centraliza a inicialização da aplicação;
+- garante que a tela abra já coerente com o modo padrão.
+
+### 9.9. `_criar_interface() -> None`
+
+Monta o layout principal da aplicação.
+
+Ela organiza:
+
+- cabeçalho;
+- painel de entrada;
+- painel de resultado;
+- botões de ação;
+- barra de progresso;
+- área rolável.
+
+Por que existe:
+
+- separa construção visual da lógica de avaliação;
+- facilita evolução de layout sem alterar o núcleo do programa.
+
+### 9.10. `_selecionar_modo(modo: str) -> None` e `_atualizar_modo_visual() -> None`
+
+Esses métodos controlam a troca entre `mais_ou_menos` e `topzera`.
+
+Por que existem:
+
+- mantêm sincronizados o estado interno e a aparência da interface;
+- exibem apenas as opções relevantes para cada motor.
+
+Impacto prático:
+
+- reduzem erro de operação, porque escondem configurações que não fazem sentido no modo atual.
+
+### 9.11. `_carregar_exemplo() -> None` e `_limpar_campos() -> None`
+
+Esses métodos apoiam o uso manual da GUI.
+
+`_carregar_exemplo()`:
+
+- percorre os exemplos disponíveis;
+- preenche pergunta, gabarito e resposta do usuário;
+- atualiza o texto de apoio da interface.
+
+`_limpar_campos()`:
+
+- limpa os textos sem mudar o modo atual;
+- prepara a tela para uma nova avaliação.
+
+Por que existem:
+
+- tornam a demonstração mais rápida;
+- reduzem esforço repetitivo durante testes manuais.
+
+### 9.12. `_iniciar_avaliacao() -> None`, `_validar_entradas(...) -> str | None` e `_executar_avaliacao_em_thread(...) -> None`
+
+Esses métodos controlam o disparo da avaliação.
+
+Fluxo:
+
+1. lê os textos da tela;
+2. valida campos obrigatórios;
+3. ativa estado de carregamento;
+4. cria uma thread para rodar o motor escolhido;
+5. captura falhas e devolve o resultado para a thread principal da interface.
+
+Por que existem:
+
+- evitam travamento da janela;
+- tratam erro de uso antes da execução;
+- melhoram robustez em ambiente real.
+
+### 9.13. `_avaliar_mais_ou_menos(...) -> ResultadoTela`
+
+Executa o motor clássico e converte o retorno em um `ResultadoTela`.
+
+Ela organiza:
+
+- feedback e nota;
+- similaridade TF-IDF;
+- cobertura de palavras-chave;
+- observações do motor;
+- tokens e radicais, quando o modo detalhado está ativo.
+
+Por que existe:
+
+- separa a lógica de adaptação da lógica do motor;
+- preserva a rastreabilidade técnica do resultado na GUI.
+
+### 9.14. `_avaliar_topzera(...) -> ResultadoTela`
+
+Executa o motor semântico e converte o retorno para o formato visual da GUI.
+
+Ela organiza:
+
+- feedback e nota;
+- similaridade semântica;
+- deployment utilizado;
+- justificativa da IA;
+- pontos corretos, lacunas e alertas.
+
+Por que existe:
+
+- transforma uma resposta mais rica e heterogênea em apresentação consistente;
+- facilita comparação visual com o modo clássico.
+
+### 9.15. `_verificar_configuracao_azure() -> None`, `_executar_check_azure_em_thread() -> None` e `_finalizar_check_azure(...) -> None`
+
+Esses métodos fazem o check de configuração do Azure OpenAI direto pela interface.
+
+Por que existem:
+
+- validam endpoint, deployment e versão antes de uma chamada real;
+- reduzem risco de apresentação falhar por erro básico de configuração;
+- evitam consumo desnecessário de tokens só para testar ambiente.
+
+### 9.16. `_renderizar_resultado(resultado: ResultadoTela) -> None` e `_mostrar_erro(mensagem: str) -> None`
+
+Esses métodos atualizam a interface depois de uma avaliação bem-sucedida ou mal-sucedida.
+
+`_renderizar_resultado(...)`:
+
+- atualiza feedback, resumo, métricas e nota animada.
+
+`_mostrar_erro(...)`:
+
+- exibe mensagem amigável;
+- zera a visualização da nota;
+- orienta o usuário a revisar a configuração.
+
+Por que existem:
+
+- separam cenário de sucesso e cenário de falha;
+- tornam a aplicação mais segura para uso por quem não está lendo o terminal.
+
+### 9.17. `_animar_nota(destino: float) -> None`, `_animar_passo(destino: float) -> None` e `_desenhar_medidor(nota: float) -> None`
+
+Esses métodos cuidam da visualização do placar na interface.
+
+Por que existem:
+
+- melhoram leitura do resultado;
+- dão sensação de responsividade sem alterar o cálculo real da nota.
+
+Trade-off:
+
+- aumentam complexidade visual da GUI;
+- não alteram a qualidade da avaliação, apenas a forma de apresentação.
+
+### 9.18. `main() -> None`
+
+É o ponto de entrada da aplicação gráfica.
+
+Por que existe:
+
+- mantém a execução da GUI simples;
+- facilita abrir a aplicação com `venv\Scripts\python gui.py`.
+
+## 10. Comparação prática entre as funções centrais
+
+| Parte do problema | `mais_ou_menos` | `topzera` | `gui.py` |
+| --- | --- | --- | --- |
+| Entrada | `main()` e `ler_entrada_interativa()` | `main()` e `ler_entrada_interativa()` | campos da tela e `_obter_texto()` |
+| Preparação | `preprocessar_texto()` | `montar_mensagens()` | `_validar_entradas()` e escolha do modo |
+| Núcleo da avaliação | `avaliar_resposta()` | `avaliar_resposta_com_ia()` | `_avaliar_mais_ou_menos()` e `_avaliar_topzera()` como adaptadores |
+| Métrica principal | `calcular_similaridade_tfidf()` | julgamento do modelo via API | não calcula, apenas apresenta |
+| Explicação | `_gerar_observacoes()` | `justificativa`, `pontos_corretos`, `lacunas`, `alertas` | `resumo`, `detalhes` e cards de métricas |
+| Padronização do resultado | `ResultadoAvaliacao` | `ResultadoAvaliacaoIA` | `ResultadoTela` |
+| Validação | `_validar_configuracao()` | `carregar_configuracao()` e `carregar_resultado_json()` | `_validar_entradas()` e check do Azure |
+| Exibição | `exibir_resultado()` | `exibir_resultado()` | `_renderizar_resultado()` |
+
+## 11. Melhor forma de explicar o trabalho
 
 A melhor explicação para apresentação é:
 
-1. A versão `mais_ou_menos` mostra como PLN clássico transforma texto em dados comparáveis.
-2. O pré-processamento reduz ruído, como acentos, pontuação e palavras comuns.
-3. O TF-IDF mede a importância dos termos nos dois textos.
-4. A similaridade do cosseno mede a proximidade entre os vetores.
-5. A cobertura de palavras-chave adiciona uma regra simples para conceitos centrais.
-6. A versão `topzera` usa um modelo de linguagem para avaliar significado, não só palavras parecidas.
-7. A comparação entre as duas versões mostra que similaridade textual não é igual a compreensão real.
+1. Abrir a GUI para mostrar o sistema completo em funcionamento.
+2. Explicar que a GUI reutiliza dois motores diferentes, sem criar uma regra paralela.
+3. Mostrar como `mais_ou_menos` transforma texto em dados comparáveis.
+4. Explicar pré-processamento, TF-IDF e similaridade do cosseno.
+5. Mostrar que a cobertura de palavras-chave complementa a nota.
+6. Trocar para `topzera` e explicar que a avaliação passa a ser semântica.
+7. Comparar os resultados dos dois motores para o mesmo caso.
+8. Concluir que similaridade textual não é igual a compreensão real.
 
-## 11. Validação recomendada
+## 12. Validação recomendada
 
 Para validar a versão clássica:
 
@@ -1040,6 +1331,12 @@ Para validar a configuração da versão com IA:
 venv\Scripts\python topzera\main.py --check-config
 ```
 
+Para validar rapidamente os módulos principais sem abrir a interface:
+
+```powershell
+venv\Scripts\python -m py_compile gui.py mais_ou_menos\avaliador.py mais_ou_menos\main.py mais_ou_menos\preprocessamento.py topzera\avaliador_openai.py topzera\main.py
+```
+
 Para testar manualmente a versão clássica:
 
 ```powershell
@@ -1052,13 +1349,36 @@ Para testar manualmente a versão com IA:
 venv\Scripts\python topzera\main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "É uma área que ajuda computadores a analisar textos humanos."
 ```
 
-## 12. Conclusão técnica
+Para testar a GUI:
+
+```powershell
+venv\Scripts\python gui.py
+```
+
+Roteiro curto de validação da GUI:
+
+- carregar um exemplo pronto;
+- avaliar no modo `Mais ou Menos`;
+- trocar para `Topzera`;
+- usar o botão de verificação do Azure;
+- validar se o painel técnico muda de acordo com o motor.
+
+Fato:
+
+- hoje os testes automatizados cobrem apenas o motor clássico.
+
+Inferência:
+
+- a GUI e a integração com Azure ainda dependem mais de validação manual.
+
+## 13. Conclusão técnica
 
 Fato: a versão `mais_ou_menos` é mais transparente, barata e reproduzível.
 
 Fato: a versão `topzera` depende de API externa, credenciais, internet e possível custo por uso.
 
+Fato: `gui.py` melhora usabilidade e apresentação, mas continua dependente dos motores por trás.
+
 Inferência: a versão com IA tende a avaliar melhor paráfrases e respostas semanticamente corretas com palavras diferentes.
 
-Opinião técnica: a melhor entrega é mostrar que a versão clássica cumpre a base do trabalho e que a versão com IA amplia a análise, mas exige cuidado operacional e validação humana.
-
+Opinião técnica: a melhor entrega é mostrar que a versão clássica cumpre a base do trabalho, que a versão com IA amplia a análise e que a GUI torna essa comparação muito mais utilizável em cenário real, apesar do gap atual de testes da camada visual.

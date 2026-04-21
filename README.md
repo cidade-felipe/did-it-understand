@@ -2,42 +2,53 @@
 
 Sistema em Python para avaliar se uma resposta do usuário está próxima de uma resposta esperada.
 
-O projeto tem duas versões:
+Hoje o projeto tem duas abordagens de avaliação e três formas práticas de uso:
 
-- `mais_ou_menos`: versão clássica do trabalho, com pré-processamento, TF-IDF, similaridade do cosseno e cobertura de palavras-chave.
-- `topzera`: versão com Azure OpenAI, que usa um modelo de linguagem como avaliador semântico.
+- `mais_ou_menos`, motor clássico baseado em pré-processamento, TF-IDF, similaridade do cosseno e cobertura de palavras-chave.
+- `topzera`, motor semântico com Azure OpenAI, voltado para paráfrases, nuances e leitura mais próxima de significado.
+- `gui.py`, interface gráfica desktop que unifica os dois motores em uma única tela.
+
+## Estado atual do projeto
+
+As alterações mais relevantes já incorporadas no código e agora refletidas nesta documentação são:
+
+- a adição da interface gráfica `gui.py`, que passou a ser o ponto de uso mais completo para demonstrações e avaliação manual;
+- a manutenção das duas CLIs, o que preserva automação, depuração e execução reproduzível;
+- a validação de configuração do Azure OpenAI sem consumir tokens, disponível tanto na CLI `topzera` quanto na GUI;
+- o reaproveitamento dos exemplos de `mais_ou_menos/exemplos.json` dentro da interface gráfica;
+- a consolidação da arquitetura em torno de dois motores reutilizáveis, sem duplicar regra de negócio na camada visual.
+
+Impacto prático:
+
+- a GUI reduz atrito operacional em apresentação, correção manual e testes exploratórios;
+- as CLIs continuam sendo a melhor opção para validação repetível, comparação de cenários e automação;
+- a separação entre motores e interface diminui custo de manutenção e reduz risco de divergência de regra entre telas e terminal.
 
 ## Objetivo
 
 O trabalho responde à pergunta "a máquina entendeu?" de forma crítica.
 
-Fato: a versão TF-IDF mede proximidade textual.
+Fato:
 
-Fato: a versão com Azure OpenAI pede para um modelo comparar o significado das respostas.
+- a versão `mais_ou_menos` mede proximidade textual;
+- a versão `topzera` pede para um modelo comparar o significado das respostas;
+- a GUI não cria um terceiro algoritmo, ela apenas orquestra os dois motores existentes.
 
-Inferência: a versão com IA tende a lidar melhor com paráfrases, sinônimos e respostas escritas com vocabulário diferente.
+Inferência:
 
-Opinião técnica: vale apresentar as duas. A versão `mais_ou_menos` mostra os conceitos de PLN da disciplina de forma transparente. A versão `topzera` mostra uma evolução mais semântica, mas exige API, internet, credenciais e uma discussão honesta sobre custo, dependência externa e possibilidade de julgamento inconsistente.
+- a interface gráfica torna o projeto mais utilizável em ambiente real, porque reduz erro operacional e tempo de demonstração;
+- a versão com IA tende a lidar melhor com paráfrases e sinônimos do que a abordagem puramente textual.
 
-## Entrada e saída
+Opinião técnica:
 
-O sistema recebe:
+- a melhor forma de apresentar o projeto é mostrar a GUI como camada de uso e, por trás dela, explicar os dois motores;
+- isso é superior a documentar só a teoria, porque conecta implementação, usabilidade e trade-offs reais de operação.
 
-- uma pergunta
-- uma resposta esperada
-- uma resposta do usuário
-
-E retorna:
-
-- nota de 0 a 100
-- feedback, `Entendeu`, `Parcial` ou `Não entendeu`
-- indicadores da avaliação
-- explicação do resultado
-
-## Estrutura
+## Estrutura real do repositório
 
 ```text
 did-it-understand/
+├── gui.py                          # Interface gráfica unificada em Tkinter
 ├── mais_ou_menos/
 │   ├── avaliador.py                # Motor de avaliação clássica
 │   ├── exemplos.json               # Casos prontos para demonstração
@@ -48,34 +59,61 @@ did-it-understand/
 ├── topzera/
 │   ├── avaliador_openai.py         # Avaliador semântico com Azure OpenAI
 │   └── main.py                     # CLI da versão com IA
-├── .env                            # Credenciais locais e configuração
+├── .env                            # Credenciais locais, não versionadas
 ├── .env.exemple                    # Exemplo de variáveis de ambiente
 ├── .gitignore
-├── documentacao_funcoes_pln.md     # Guia detalhado das funções
-├── documentation.md                # Esta documentação técnica
-├── LICENSE                         # Licença
-├── README.md                       # Guia de uso do projeto
-└── requirements.txt                # Dependências Python
+├── documentacao_funcoes_pln.md     # Guia detalhado das funções e da GUI
+├── documentation.md                # Documentação técnica consolidada
+├── GUIA_TRABALHO.md                # Guia do enunciado e da apresentação
+├── LICENSE
+├── README.md
+└── requirements.txt
 ```
 
 ## Preparar ambiente
 
-Se você ainda não trouxe o projeto para a sua máquina, clone o repositório:
+Se você ainda não trouxe o projeto para a sua máquina:
 
 ```powershell
 git clone https://github.com/cidade-felipe/did-it-understand.git
 cd did-it-understand
 ```
 
-Use o ambiente virtual `venv` do projeto.
+Se ainda não existir um ambiente virtual no projeto, crie com:
 
-Para instalar as dependências do projeto:
+```powershell
+python -m venv venv
+```
+
+Depois instale as dependências:
 
 ```powershell
 venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-## Executar a versão TF-IDF
+## Melhor forma de usar o projeto
+
+Se o objetivo for apresentar, testar manualmente ou comparar os dois modos rapidamente, a melhor opção é a GUI:
+
+```powershell
+venv\Scripts\python gui.py
+```
+
+O que a GUI entrega:
+
+- campos para pergunta, resposta esperada e resposta do usuário;
+- troca entre `Mais ou Menos` e `Topzera` na mesma tela;
+- carregamento de exemplos prontos para demonstração;
+- painel de métricas e leitura técnica do resultado;
+- verificação de credenciais do Azure OpenAI sem consumir tokens;
+- execução em background para não travar a interface durante a avaliação.
+
+Trade-off:
+
+- a GUI é melhor para uso humano;
+- as CLIs são melhores para automação, testes repetíveis e depuração fina.
+
+## Executar a versão clássica por CLI
 
 Modo interativo:
 
@@ -101,54 +139,7 @@ Rodar exemplos:
 venv\Scripts\python mais_ou_menos\testes_exemplos.py
 ```
 
-## Como funciona a versão TF-IDF
-
-Fluxo:
-
-```text
-pergunta
-resposta esperada  -> pré-processamento -> TF-IDF -> similaridade do cosseno -> nota -> feedback
-resposta usuário   -> pré-processamento -> TF-IDF -> palavras-chave ------------^
-```
-
-O pré-processamento faz:
-
-- conversão para minúsculas
-- remoção de acentos
-- remoção de pontuação
-- tokenização
-- remoção opcional de stopwords
-- stemming em português com `nltk`
-
-A nota combina:
-
-- `80%` da similaridade TF-IDF
-- `20%` da cobertura de palavras-chave da resposta esperada
-
-Classificação padrão:
-
-- `70` ou mais: `Entendeu`
-- de `30` até `69,99`: `Parcial`
-- abaixo de `30`: `Não entendeu`
-
-## Configurar Azure OpenAI
-
-No arquivo `.env` da raiz, configure suas credenciais:
-
-```env
-OPENAI_API_KEY=sua_chave_do_azure
-AZURE_ENDPOINT=https://seu-recurso.cognitiveservices.azure.com/
-AZURE_OPENAI_DEPLOYMENT=nome_do_seu_deployment
-AZURE_OPENAI_API_VERSION=2024-12-01-preview
-```
-
-Importante: no Azure OpenAI, o `model` enviado pelo código deve ser o nome do deployment criado no Azure, não necessariamente o nome público do modelo.
-
-Prefira usar o endpoint base, terminando em `.cognitiveservices.azure.com/`. Se você colar uma URL com `/openai/...` e `api-version`, o código tenta limpar essa URL antes de criar o cliente.
-
-Por padrão, o código não envia `temperature`. Alguns deployments aceitam somente a temperatura padrão e dão erro quando recebem `temperature=0.0`. Se o seu deployment aceitar temperatura customizada, configure `AZURE_OPENAI_TEMPERATURE=1` ou outro valor suportado.
-
-## Executar a versão Azure OpenAI
+## Executar a versão com Azure OpenAI por CLI
 
 Validar configuração sem gastar token:
 
@@ -168,24 +159,82 @@ Modo por argumentos:
 venv\Scripts\python topzera\main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "É uma área que analisa textos escritos por pessoas."
 ```
 
-## Como interpretar a versão com IA
+## Configurar Azure OpenAI
+
+Você pode usar o arquivo `.env.exemple` como base e criar um `.env` local na raiz.
+
+Exemplo recomendado:
+
+```env
+AZURE_OPENAI_API_KEY=sua_chave
+AZURE_OPENAI_ENDPOINT=https://seu-recurso.cognitiveservices.azure.com/
+AZURE_OPENAI_DEPLOYMENT=nome_do_deployment
+AZURE_OPENAI_API_VERSION=2024-12-01-preview
+AZURE_OPENAI_TEMPERATURE=1
+```
+
+Observações importantes:
+
+- o código aceita aliases como `OPENAI_API_KEY`, `AZURE_ENDPOINT`, `AZURE_DEPLOYMENT` e `OPENAI_MODEL`;
+- o campo `model` enviado ao SDK precisa ser o nome do deployment no Azure, não necessariamente o nome comercial do modelo;
+- se você colar uma URL com `/openai/...` e `api-version`, o código tenta normalizar essa URL para o endpoint base;
+- `AZURE_OPENAI_TEMPERATURE` é opcional, porque alguns deployments rejeitam temperatura explícita.
+
+## Como cada motor funciona
+
+### `mais_ou_menos`
+
+Fluxo resumido:
+
+```text
+pergunta
+resposta esperada  -> pré-processamento -> TF-IDF -> similaridade do cosseno -> nota -> feedback
+resposta usuário   -> pré-processamento -> palavras-chave --------------------^
+```
+
+A nota combina:
+
+- `80%` da similaridade TF-IDF;
+- `20%` da cobertura de palavras-chave.
+
+Classificação padrão:
+
+- `70` ou mais: `Entendeu`;
+- de `30` até `69,99`: `Parcial`;
+- abaixo de `30`: `Não entendeu`.
+
+### `topzera`
 
 A saída mostra:
 
-- `Feedback`: Entendeu, Parcial ou Não entendeu
-- `Nota`: escala de 0 a 100
-- `Similaridade semântica`: proximidade estimada pelo modelo
-- `Justificativa`: explicação curta do julgamento
-- `Pontos corretos`: ideias da resposta do usuário que combinam com a esperada
-- `Lacunas`: o que faltou
-- `Alertas`: contradições, fuga do tema ou vagueza
+- `Feedback`;
+- `Nota`;
+- `Similaridade semântica`;
+- `Justificativa`;
+- `Pontos corretos`;
+- `Lacunas`;
+- `Alertas`.
 
-## Validação
+Fato:
 
-Rode os testes automatizados:
+- o retorno é normalizado depois da resposta do modelo, o que reduz risco de JSON inconsistente quebrar a aplicação.
+
+Inferência:
+
+- isso melhora robustez operacional e reduz retrabalho durante demonstrações ou uso manual.
+
+## Validação recomendada
+
+Rode os testes automatizados da versão clássica:
 
 ```powershell
 venv\Scripts\python -m unittest discover -s mais_ou_menos -p "test*.py"
+```
+
+Valide os módulos principais sem executar a GUI:
+
+```powershell
+venv\Scripts\python -m py_compile gui.py mais_ou_menos\avaliador.py mais_ou_menos\main.py mais_ou_menos\preprocessamento.py topzera\avaliador_openai.py topzera\main.py
 ```
 
 Valide a configuração da IA:
@@ -194,33 +243,38 @@ Valide a configuração da IA:
 venv\Scripts\python topzera\main.py --check-config
 ```
 
-Para defender melhor o trabalho, teste estes cenários nas duas versões:
+Teste manualmente a GUI nos cenários abaixo:
 
-- resposta correta com palavras parecidas
-- resposta correta com outras palavras
-- resposta incompleta
-- resposta errada com palavras parecidas
-- resposta vazia na versão TF-IDF
-- resposta vaga na versão com IA
+- resposta correta com palavras parecidas;
+- resposta correta com outras palavras;
+- resposta incompleta;
+- resposta errada com termos parecidos;
+- resposta vazia no modo `Mais ou Menos`;
+- falha de configuração no modo `Topzera`.
 
-## Limites
+Fato:
 
-Fato: TF-IDF compara palavras e distribuições de termos.
+- hoje os testes automatizados cobrem apenas o motor clássico.
 
-Fato: o modelo via Azure OpenAI avalia linguagem natural de forma mais flexível, mas continua sendo uma estimativa produzida por um sistema estatístico.
+Opinião técnica:
 
-Inferência: respostas corretas com vocabulário muito diferente podem receber nota injusta no TF-IDF.
+- isso é suficiente para proteger a base do trabalho, mas ainda existe espaço de melhoria em testes da GUI e em mocks para a integração com Azure OpenAI.
 
-Inferência: a versão com IA pode variar a justificativa, depender da disponibilidade da API e gerar custo por uso.
+## Limites e trade-offs
 
-Opinião técnica: a melhor apresentação é comparar os resultados das duas versões e explicar o trade-off. A primeira é mais simples, barata, reproduzível e alinhada aos conceitos básicos de PLN. A segunda captura melhor significado, mas aumenta complexidade operacional.
+Fato:
 
-## Roteiro de apresentação
+- TF-IDF compara palavras e distribuição de termos;
+- Azure OpenAI oferece uma leitura mais semântica, mas depende de infraestrutura externa;
+- a GUI melhora experiência de uso, mas não substitui validação técnica do motor.
 
-1. Apresente o problema: comparar resposta esperada e resposta do usuário.
-2. Mostre a versão `mais_ou_menos` e explique pré-processamento, TF-IDF e cosseno.
-3. Rode exemplos bons, parciais e ruins.
-4. Mostre a versão `topzera` avaliando um exemplo com paráfrase.
-5. Compare as notas das duas abordagens.
-6. Discuta que similaridade textual não é o mesmo que entendimento.
-7. Conclua quando a abordagem simples é suficiente e quando a IA ajuda.
+Inferência:
+
+- a versão clássica é mais barata, previsível e fácil de explicar;
+- a versão com IA tende a ser melhor para paráfrases;
+- a GUI reduz tempo de operação e risco de erro humano na condução da apresentação.
+
+Opinião técnica:
+
+- a combinação mais forte para defesa do trabalho é usar a GUI para mostrar o sistema e, em seguida, explicar os trade-offs dos dois motores;
+- isso conecta fundamentos, experiência de uso e maturidade de engenharia em vez de apresentar só um script rodando.
