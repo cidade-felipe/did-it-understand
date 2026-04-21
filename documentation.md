@@ -1,73 +1,59 @@
-# Documentação técnica, Did It Understand?
+# Documentação Técnica
 
-## 1. Visão geral
+## Did It Understand?
 
-O **Did It Understand?** é um projeto em Python para avaliar respostas textuais.
+Trabalho acadêmico da disciplina de Inteligência Artificial.
 
-A entrada do sistema é:
+- Acadêmicos: Felipe Cidade Soares, Karolini Roncani Pedrozo Leonhard Henrique Carvalho Onofre e 
+- Professora: Eliane
+- Universidade: Universidade Federal de Santa Catarina (UFSC)
+- Data: 21 de abril de 2026
+
+## 1. Contexto do trabalho
+
+O projeto **Did It Understand?** foi desenvolvido para investigar uma pergunta central da área de Inteligência Artificial aplicada à linguagem:
+
+```text
+A máquina entendeu a resposta do usuário?
+```
+
+Na prática, o sistema recebe três entradas:
 
 - uma pergunta
 - uma resposta esperada
-- uma resposta escrita pelo usuário
+- uma resposta fornecida pelo usuário
 
-A saída esperada é:
+Com base nisso, ele gera:
 
 - uma nota de `0` a `100`
-- um feedback, `Entendeu`, `Parcial` ou `Nao entendeu`
-- indicadores que ajudam a explicar a avaliação
+- uma classificação qualitativa, `Entendeu`, `Parcial` ou `Nao entendeu`
+- indicadores complementares para justificar o resultado
 
-O repositório tem duas implementações:
+O trabalho foi estruturado em duas abordagens complementares:
 
-- `mais_ou_menos`, versão determinística com PLN clássico, TF-IDF, similaridade do cosseno, stemming e palavras-chave
-- `topzera`, versão com Azure OpenAI, que pede para um modelo avaliar a proximidade semântica da resposta
+- `mais_ou_menos`, uma solução determinística baseada em PLN clássico, TF-IDF, similaridade do cosseno, stemming e cobertura de palavras-chave
+- `topzera`, uma solução baseada em Azure OpenAI, voltada para avaliação mais semântica da resposta
 
-## 2. Tese do trabalho
+## 2. Objetivo acadêmico
 
-Pergunta central:
+O objetivo do trabalho não é afirmar que a máquina realmente "compreende" no sentido humano do termo. O propósito é demonstrar, de forma técnica e crítica, como diferentes abordagens de Inteligência Artificial podem estimar evidências de entendimento.
 
-```text
-A máquina entendeu?
-```
+Fato:
 
-Resposta crítica:
+- a versão `mais_ou_menos` mede principalmente proximidade textual e presença de termos relevantes
+- a versão `topzera` utiliza um modelo de linguagem para avaliar significado, coerência, lacunas e aderência à resposta esperada
 
-```text
-Depende da versão e do que chamamos de "entender".
-```
+Inferência:
 
-Fato: a versão `mais_ou_menos` mede proximidade textual. Ela transforma as respostas em tokens, calcula vetores TF-IDF e compara esses vetores.
+- as duas versões respondem à mesma pergunta de formas diferentes, o que permite comparar transparência, custo, robustez e qualidade semântica
 
-Fato: a versão `topzera` usa um modelo disponibilizado no Azure OpenAI para julgar significado, lacunas, acertos e contradições.
+Opinião técnica:
 
-Inferência: a versão clássica é mais previsível e barata, mas tem dificuldade com sinônimos e paráfrases. A versão com IA lida melhor com significado, mas depende de API externa, credencial, deployment, internet e custo por uso.
+- essa combinação é superior a apresentar apenas uma solução, porque mostra maturidade acadêmica, domínio de fundamentos e capacidade de comparar uma abordagem clássica com uma abordagem moderna baseada em modelos generativos
 
-Opinião técnica: para apresentação, a melhor abordagem é mostrar as duas versões. A primeira prova que o grupo entende o pipeline básico de PLN. A segunda mostra uma evolução prática, mais próxima de um avaliador semântico.
+## 3. Visão geral da solução
 
-## 3. Estrutura atual do projeto
-
-```text
-did-it-understand/
-├── Backup/
-│   └── ...                         # Cópias antigas antes de alterações
-├── mais_ou_menos/
-│   ├── avaliador.py                # Motor TF-IDF, nota, feedback e observações
-│   ├── exemplos.json               # Casos preparados para demonstração
-│   ├── main.py                     # CLI da versão clássica
-│   ├── preprocessamento.py         # Normalização, tokens, stopwords e stemming
-│   ├── test_avaliador.py           # Testes unitários da versão clássica
-│   └── testes_exemplos.py          # Executa exemplos e compara expectativa humana
-├── topzera/
-│   ├── avaliador_openai.py         # Motor semântico usando Azure OpenAI
-│   ├── main.py                     # CLI da versão com IA
-├── .env                            # Credenciais locais, não versionar
-├── .env.exemple                    # Modelo de variáveis de ambiente
-├── documentation.md                # Esta documentação técnica
-├── GUIA_TRABALHO_PLN.md            # Resumo do enunciado
-├── README.md                       # Guia único de uso
-└── requirements.txt                # Dependências do projeto
-```
-
-## 4. Arquitetura geral
+Em alto nível, o fluxo do sistema é o seguinte:
 
 ```mermaid
 flowchart TD
@@ -89,51 +75,81 @@ flowchart TD
     resposta --> ia
 
     classica --> saida1["nota, feedback,<br/>similaridade TF-IDF,<br/>palavras-chave,<br/>observações"]
-    ia --> saida2["nota, feedback,<br/>similaridade semântica,<br/>justificativa,<br/>pontos, lacunas e alertas"]
+    ia --> saida2["nota, feedback,<br/>similaridade semântica,<br/>justificativa,<br/>pontos corretos,<br/>lacunas e alertas"]
+```
+
+Esse desenho permite comparar uma abordagem de baixo custo e alta explicabilidade com outra de maior sofisticação semântica.
+
+## 4. Estrutura do repositório
+
+```text
+did-it-understand/
+├── Backup/
+│   └── ...                         # Cópias anteriores dos arquivos alterados
+├── mais_ou_menos/
+│   ├── avaliador.py                # Motor de avaliação clássica
+│   ├── exemplos.json               # Casos prontos para demonstração
+│   ├── main.py                     # CLI da versão clássica
+│   ├── preprocessamento.py         # Normalização, tokenização e stemming
+│   ├── test_avaliador.py           # Testes unitários da versão clássica
+│   └── testes_exemplos.py          # Execução de cenários demonstrativos
+├── topzera/
+│   ├── avaliador_openai.py         # Avaliador semântico com Azure OpenAI
+│   └── main.py                     # CLI da versão com IA
+├── .env                            # Credenciais locais e configuração
+├── .env.exemple                    # Exemplo de variáveis de ambiente
+├── documentation.md                # Esta documentação técnica
+├── GUIA_TRABALHO.md                # Guia resumido do trabalho
+├── README.md                       # Guia de uso do projeto
+└── requirements.txt                # Dependências Python
 ```
 
 ## 5. Preparação do ambiente
 
-O padrão deste projeto é usar uma pasta chamada `venv`.
+O projeto foi organizado para utilizar um ambiente virtual chamado `venv`.
 
-Criar ambiente virtual, quando ainda não existir:
+Criação do ambiente:
 
 ```powershell
 python -m venv venv
 ```
 
-Instalar as dependências do projeto:
+Instalação das dependências:
 
 ```powershell
 venv\Scripts\python -m pip install -r requirements.txt
 ```
 
-Validar importações da versão com IA:
+Validação rápida dos arquivos principais:
 
 ```powershell
-venv\Scripts\python -m py_compile topzera\avaliador_openai.py topzera\main.py
+venv\Scripts\python -m py_compile mais_ou_menos\avaliador.py mais_ou_menos\main.py mais_ou_menos\preprocessamento.py topzera\avaliador_openai.py topzera\main.py
 ```
 
-## 6. Dependências
+## 6. Dependências do projeto
 
-### requirements.txt da raiz
+As principais bibliotecas utilizadas são:
 
-Contém as bibliotecas do projeto.
+- `scikit-learn`, para vetorização TF-IDF e similaridade do cosseno
+- `nltk`, para stemming em português
+- `Unidecode`, para normalização de acentuação
+- `rich`, para exibição estruturada no terminal
+- `openai`, para acesso ao cliente `AzureOpenAI`
+- `python-dotenv`, para carregar variáveis de ambiente a partir do `.env`
 
-Uso:
+Impacto prático:
 
-- `scikit-learn` para TF-IDF e similaridade
-- `nltk` para stemming
-- `Unidecode` para normalizar acentos
-- `rich` para exibir tabelas e painéis no terminal
-- `openai` para instanciar `AzureOpenAI` e chamar o deployment configurado no Azure
-- `python-dotenv` para carregar variáveis do arquivo `.env`
+- essas dependências viabilizam um pipeline reprodutível e relativamente simples de manter
+- na versão clássica, o custo operacional por avaliação tende a ser praticamente nulo após a instalação
+- na versão com IA, surge custo de API, mas também cresce a capacidade de lidar com paráfrases e sentido
 
-## 7. Versão 1, mais_ou_menos
+## 7. Versão 1, `mais_ou_menos`
 
-Esta é a versão baseada em PLN clássico.
+### 7.1 Objetivo
 
-Fluxo:
+A pasta `mais_ou_menos` contém a implementação determinística do projeto. Ela foi pensada para demonstrar fundamentos de Processamento de Linguagem Natural e para oferecer uma linha de base transparente e explicável.
+
+### 7.2 Fluxo de processamento
 
 ```mermaid
 flowchart TD
@@ -144,8 +160,8 @@ flowchart TD
     tfidf["TF-IDF"]
     cosseno["Similaridade do cosseno"]
     keywords["Cobertura de palavras-chave"]
-    nota["Nota 0 a 100"]
-    feedback["Feedback final"]
+    nota["Nota final"]
+    feedback["Feedback"]
     obs["Observações"]
 
     esperada --> prep1
@@ -161,28 +177,23 @@ flowchart TD
     nota --> obs
 ```
 
-## 8. Pré-processamento
+### 7.3 Pré-processamento textual
 
-Arquivo:
+Arquivo principal:
 
 ```text
 mais_ou_menos/preprocessamento.py
 ```
 
-Responsabilidade:
+Responsabilidades da etapa:
 
-- transformar texto natural em uma representação mais fácil de comparar
-
-Etapas principais:
-
-- converter para string
-- passar para minúsculas
-- remover acentos com `unidecode`
-- substituir pontuação por espaços
-- remover espaços repetidos
-- tokenizar
-- remover stopwords, quando configurado
-- aplicar stemming, quando configurado
+- converter texto para minúsculas
+- remover acentos
+- remover pontuação
+- padronizar espaços
+- tokenizar o texto
+- remover stopwords, quando habilitado
+- aplicar stemming, quando habilitado
 
 Exemplo conceitual:
 
@@ -190,63 +201,75 @@ Exemplo conceitual:
 "Processamento de Linguagem Natural!"
 ```
 
-Pode virar uma lista próxima de:
+Pode ser transformado em algo próximo de:
 
 ```text
 ["process", "lingu", "natural"]
 ```
 
-Isso é útil para comparação, mas não é uma frase humana. É uma representação matemática reduzida.
+Fato:
 
-## 9. Avaliador clássico
+- essa transformação facilita a comparação matemática entre respostas
 
-Arquivo:
+Inferência:
+
+- ao mesmo tempo, parte da nuance linguística é perdida, o que explica por que respostas semanticamente corretas podem receber nota menor do que o esperado
+
+### 7.4 Motor de avaliação clássica
+
+Arquivo principal:
 
 ```text
 mais_ou_menos/avaliador.py
 ```
 
-Função principal:
+A função central é:
 
 ```text
 avaliar_resposta(pergunta, resposta_esperada, resposta_usuario, configuracao=None)
 ```
 
-Responsabilidades:
+Ela executa as seguintes etapas:
 
-- validar configuração
-- recusar resposta esperada vazia
-- pré-processar resposta esperada
-- pré-processar resposta do usuário
-- extrair palavras-chave da resposta esperada
-- calcular similaridade TF-IDF
-- calcular cobertura de palavras-chave
-- combinar as métricas em uma nota
-- transformar nota em feedback
-- gerar observações para interpretação
+- valida a configuração de pesos e limites
+- rejeita resposta esperada vazia
+- preprocessa a resposta esperada
+- preprocessa a resposta do usuário
+- extrai palavras-chave da resposta esperada
+- calcula a similaridade TF-IDF
+- calcula a cobertura das palavras-chave
+- combina os sinais em uma nota final
+- converte a nota em feedback categórico
+- gera observações interpretativas
 
-## 10. Cálculo da nota clássica
+### 7.5 Fórmula da nota
 
-Regra padrão:
+Regra padrão da implementação:
 
 ```text
 nota_base = (similaridade * 0.8) + (cobertura_palavras_chave * 0.2)
 nota = nota_base * 100
 ```
 
-Feedback padrão:
+Faixas de classificação:
 
 - nota `>= 70`: `Entendeu`
 - nota `>= 30` e `< 70`: `Parcial`
 - nota `< 30`: `Nao entendeu`
 
-Fato: a similaridade TF-IDF observa distribuição de termos.
+Fato:
 
-Inferência: se a resposta do usuário repete termos centrais da resposta esperada, a nota tende a subir.
+- o peso principal está na similaridade textual
 
-Risco: uma resposta conceitualmente correta com palavras diferentes pode ficar com nota baixa.
+Inferência:
 
-## 11. CLI clássica
+- a resposta tende a ser melhor avaliada quando reutiliza termos centrais da resposta esperada
+
+Risco técnico:
+
+- respostas corretas com vocabulário muito diferente podem ser subavaliadas
+
+### 7.6 Interface de linha de comando
 
 Arquivo:
 
@@ -266,75 +289,46 @@ Modo por argumentos:
 venv\Scripts\python mais_ou_menos\main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "PLN analisa linguagem humana." --detalhes
 ```
 
-Opções importantes:
+Parâmetros relevantes:
 
-- `--pergunta`, informa a pergunta
-- `--esperada`, informa a resposta de referência
-- `--usuario`, informa a resposta avaliada
-- `--detalhes`, mostra tokens, radicais e palavras-chave
-- `--manter-stopwords`, mantém palavras comuns
-- `--sem-stemming`, desliga radicalização para comparar antes e depois
+- `--pergunta`
+- `--esperada`
+- `--usuario`
+- `--detalhes`
+- `--manter-stopwords`
+- `--sem-stemming`
 
-## 12. Exemplos clássicos
+### 7.7 Pontos fortes e limitações
 
-Arquivos:
+Pontos fortes:
 
-```text
-mais_ou_menos/exemplos.json
-mais_ou_menos/testes_exemplos.py
-```
+- baixo custo de execução
+- alta reprodutibilidade
+- fácil explicação em sala de aula
+- comportamento previsível
 
-Executar:
+Limitações:
 
-```powershell
-venv\Scripts\python mais_ou_menos\testes_exemplos.py
-```
+- baixa sensibilidade semântica profunda
+- dificuldade com sinônimos e paráfrases
+- risco de premiar repetição superficial de palavras
 
-Uso na apresentação:
+## 8. Versão 2, `topzera`
 
-- mostrar cenário
-- mostrar expectativa humana
-- mostrar resultado do sistema
-- explicar por que bateu ou divergiu
+### 8.1 Objetivo
 
-## 13. Testes automatizados
+A pasta `topzera` representa a evolução do trabalho para uma abordagem de avaliação semântica. Em vez de comparar apenas a forma textual, ela utiliza um modelo hospedado no Azure OpenAI para estimar proximidade de significado.
 
-Arquivo:
-
-```text
-mais_ou_menos/test_avaliador.py
-```
-
-Executar:
-
-```powershell
-venv\Scripts\python -m unittest discover -s mais_ou_menos -p "test*.py"
-```
-
-Os testes cobrem comportamentos como:
-
-- remoção de acentos e pontuação
-- aproximação por stemming
-- resposta igual recebe nota máxima
-- resposta vazia recebe nota baixa
-- resposta errada fica abaixo do limite parcial
-
-## 14. Versão 2, topzera
-
-Esta é a versão com Azure OpenAI.
-
-Ela não substitui obrigatoriamente a versão clássica. Ela funciona como uma comparação mais semântica.
-
-Fluxo:
+### 8.2 Fluxo da solução com IA
 
 ```mermaid
 flowchart TD
     env[".env"]
     config["carregar_configuracao()"]
     cliente["AzureOpenAI"]
-    prompt["pergunta + esperada + resposta do usuário"]
-    modelo["deployment no Azure"]
-    json["JSON do modelo"]
+    prompt["pergunta + resposta esperada + resposta do usuário"]
+    modelo["deployment configurado no Azure"]
+    json["JSON retornado pelo modelo"]
     resultado["ResultadoAvaliacaoIA"]
 
     env --> config
@@ -345,20 +339,20 @@ flowchart TD
     json --> resultado
 ```
 
-## 15. Configuração do Azure OpenAI
+### 8.3 Configuração
 
-Arquivo de ambiente:
+Arquivo de referência:
 
 ```text
 .env
 ```
 
-Variáveis esperadas:
+Exemplo mínimo:
 
 ```env
 OPENAI_API_KEY=sua_chave_do_azure
 AZURE_ENDPOINT=https://seu-recurso.cognitiveservices.azure.com/
-AZURE_OPENAI_DEPLOYMENT=nome_do_seu_deployment
+AZURE_OPENAI_DEPLOYMENT=nome_do_deployment
 AZURE_OPENAI_API_VERSION=2024-12-01-preview
 ```
 
@@ -369,69 +363,35 @@ Nomes aceitos pelo código:
 - deployment: `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_MODEL`, `AZURE_DEPLOYMENT` ou `OPENAI_MODEL`
 - versão da API: `AZURE_OPENAI_API_VERSION` ou `OPENAI_API_VERSION`
 
-Ponto importante:
+Ponto crítico:
 
 ```text
 model = nome do deployment no Azure
 ```
 
-Não confunda com o nome público do modelo. Se no portal do Azure o deployment se chama `avaliador-aula`, é esse nome que precisa estar em `AZURE_OPENAI_DEPLOYMENT`.
+Isso significa que o código não espera necessariamente o nome comercial do modelo, e sim o nome do deployment publicado no portal do Azure.
 
-## 16. Endpoint do Azure
+### 8.4 Avaliador semântico
 
-O SDK espera o endpoint base do recurso:
-
-```env
-AZURE_ENDPOINT=https://seu-recurso.cognitiveservices.azure.com/
-```
-
-O código em `topzera/avaliador_openai.py` tenta normalizar URLs que vierem com caminho extra, por exemplo:
-
-```text
-https://seu-recurso.cognitiveservices.azure.com/openai/responses?api-version=...
-```
-
-Mesmo assim, a forma recomendada no `.env` é o endpoint base.
-
-## 17. Temperatura
-
-Por padrão, a versão `topzera` não envia `temperature`.
-
-Motivo:
-
-- alguns deployments aceitam apenas a temperatura padrão
-- nesses casos, enviar `temperature=0.0` pode causar erro `400`
-
-Se o deployment aceitar temperatura configurável, use:
-
-```env
-AZURE_OPENAI_TEMPERATURE=1
-```
-
-Opinião técnica: para este trabalho, a temperatura padrão é suficiente. O mais importante é que a avaliação seja explicável pelo JSON de saída.
-
-## 18. Avaliador com IA
-
-Arquivo:
+Arquivo principal:
 
 ```text
 topzera/avaliador_openai.py
 ```
 
-Elementos principais:
+Componentes importantes:
 
-- `ConfiguracaoAzureOpenAI`, guarda chave, endpoint, deployment, versão da API e temperatura opcional
-- `ResultadoAvaliacaoIA`, representa a avaliação retornada ao usuário
-- `carregar_configuracao()`, valida credenciais e parâmetros mínimos
-- `load_dotenv()`, chamado dentro da configuração para carregar o `.env` com `python-dotenv`
-- `normalizar_endpoint_azure()`, remove caminho `/openai/...` quando ele aparece no endpoint
-- `criar_cliente()`, instancia `AzureOpenAI`
-- `montar_mensagens()`, cria instrução de sistema e tarefa do usuário
-- `avaliar_resposta_com_ia()`, chama o modelo e monta o resultado final
+- `ConfiguracaoAzureOpenAI`, para armazenar credenciais e parâmetros
+- `ResultadoAvaliacaoIA`, para representar o resultado final
+- `carregar_configuracao()`, para validar e montar a configuração
+- `normalizar_endpoint_azure()`, para limpar endpoints com caminho extra
+- `criar_cliente()`, para instanciar o cliente `AzureOpenAI`
+- `montar_mensagens()`, para construir o prompt
+- `avaliar_resposta_com_ia()`, para chamar o modelo e estruturar o retorno
 
-## 19. Formato esperado da IA
+### 8.5 Formato de saída esperado
 
-O prompt pede um JSON neste formato:
+O prompt orienta o modelo a responder em JSON, no formato:
 
 ```json
 {
@@ -445,15 +405,15 @@ O prompt pede um JSON neste formato:
 }
 ```
 
-O código normaliza a resposta:
+Após a resposta, o código ainda faz uma camada adicional de validação:
 
-- limita nota entre `0` e `100`
-- limita similaridade entre `0.0` e `1.0`
-- converte feedback para um dos três rótulos esperados
-- transforma listas ausentes em listas vazias
-- rejeita JSON inválido com erro explícito
+- limita a nota entre `0` e `100`
+- limita a similaridade semântica entre `0.0` e `1.0`
+- normaliza o feedback para os três rótulos oficiais do projeto
+- converte listas ausentes em listas vazias
+- lança erro quando o JSON retornado não é válido
 
-## 20. CLI com IA
+### 8.6 Interface de linha de comando
 
 Arquivo:
 
@@ -479,50 +439,73 @@ Modo por argumentos:
 venv\Scripts\python topzera\main.py --pergunta "O que é PLN?" --esperada "PLN é a área da computação que processa linguagem humana." --usuario "É uma área que permite analisar textos de pessoas."
 ```
 
-Saída esperada:
+### 8.7 Pontos fortes e limitações
 
-- feedback
-- nota
-- similaridade semântica
-- justificativa
-- pontos corretos
-- lacunas
-- alertas
+Pontos fortes:
 
-## 21. Comparação técnica
+- maior capacidade de capturar sentido e paráfrase
+- retorno mais rico, com justificativa textual
+- melhor aderência a casos em que o aluno acerta com outras palavras
 
-| Critério | `mais_ou_menos` | `topzera` |
-| --- | --- | --- |
-| Técnica | TF-IDF e cosseno | Modelo via Azure OpenAI |
-| Custo por avaliação | praticamente zero localmente | pode cobrar tokens na Azure |
-| Internet | não precisa para executar depois de instalado | precisa para chamar API |
-| Explicabilidade | alta, métricas simples | média, depende da justificativa do modelo |
-| Paráfrases | dificuldade maior | tendência a avaliar melhor |
-| Reprodutibilidade | alta | pode variar por modelo, deployment e configuração |
-| Alinhamento com aula básica | alto | funciona como evolução |
-| Manutenção | simples | exige credenciais, endpoint e deployment |
+Limitações:
 
-## 22. Tratamento de erros
+- depende de internet, credencial e deployment ativo
+- pode gerar custo por uso
+- apresenta menor reprodutibilidade que a versão clássica
+- exige validação humana em usos relevantes
 
-Na versão clássica:
+## 9. Comparação técnica entre as duas abordagens
 
-- resposta esperada vazia gera `ValueError`
-- resposta do usuário vazia recebe nota baixa
-- configuração com pesos inválidos gera erro
+| Critério                   | `mais_ou_menos`                    | `topzera`                             |
+| --------------------------- | ------------------------------------ | --------------------------------------- |
+| Técnica principal          | TF-IDF e similaridade do cosseno     | modelo via Azure OpenAI                 |
+| Custo por avaliação       | praticamente zero após instalação | depende de consumo da API               |
+| Dependência externa        | baixa                                | alta                                    |
+| Explicabilidade             | alta                                 | média                                  |
+| Sensibilidade a paráfrases | limitada                             | maior                                   |
+| Reprodutibilidade           | alta                                 | moderada                                |
+| Complexidade operacional    | baixa                                | média                                  |
+| Adequação didática       | excelente para fundamentos           | excelente para discussão de IA moderna |
 
-Na versão Azure OpenAI:
+Melhor opção para apresentação:
 
-- falta de chave gera erro de configuração
-- falta de endpoint gera erro de configuração
-- falta de deployment gera erro de configuração
-- ausência da biblioteca `openai` gera mensagem com comando de instalação
-- resposta JSON inválida gera erro específico
-- endpoint com caminho extra é normalizado antes de criar o cliente
-- `temperature` só é enviado quando configurado
+- usar as duas
 
-## 23. Validação recomendada
+Justificativa:
 
-Antes da apresentação:
+- a versão clássica mostra domínio dos fundamentos
+- a versão com IA amplia a discussão para semântica, custo, dependência de infraestrutura e limites dos modelos generativos
+- juntas, elas enriquecem a análise crítica e deixam o trabalho mais completo
+
+## 10. Testes e validação
+
+Arquivo de testes automatizados da versão clássica:
+
+```text
+mais_ou_menos/test_avaliador.py
+```
+
+Execução:
+
+```powershell
+venv\Scripts\python -m unittest discover -s mais_ou_menos -p "test*.py"
+```
+
+Os testes cobrem:
+
+- remoção de acentos e pontuação
+- aproximação por stemming
+- resposta idêntica com nota máxima
+- resposta vazia com nota baixa
+- resposta errada abaixo do limite parcial
+
+Exemplos demonstrativos:
+
+```powershell
+venv\Scripts\python mais_ou_menos\testes_exemplos.py
+```
+
+Validação recomendada antes da apresentação:
 
 ```powershell
 venv\Scripts\python -m unittest discover -s mais_ou_menos -p "test*.py"
@@ -530,85 +513,103 @@ venv\Scripts\python -m py_compile topzera\avaliador_openai.py topzera\main.py
 venv\Scripts\python topzera\main.py --check-config
 ```
 
-Depois, faça testes manuais com pelo menos:
+## 11. Aplicação prática e impacto
 
-- resposta idêntica à esperada
-- resposta correta usando sinônimos
-- resposta incompleta
-- resposta errada, mas com palavras parecidas
-- resposta vaga
-- resposta com contradição
+Embora o projeto tenha sido desenvolvido como trabalho acadêmico, ele dialoga com problemas reais.
 
-## 24. Observabilidade e ambiente real
+Possíveis aplicações:
 
-Para um trabalho acadêmico, imprimir o resultado no terminal é suficiente.
+- apoio à correção inicial de respostas abertas
+- triagem de respostas em atividades com grande volume
+- padronização preliminar de feedback
+- apoio ao professor na identificação de respostas incompletas
 
-Para um ambiente real, seria recomendável adicionar:
+Impacto real potencial:
 
-- logging de erro sem gravar chave de API
-- identificador de cada avaliação
-- tempo de resposta da API
-- contagem de avaliações por dia
-- custo estimado por turma ou por exercício
-- amostra de respostas revisadas por humano para calibrar a nota
-- testes de regressão com respostas reais anonimizadas
+- ganho de eficiência na correção
+- redução de esforço operacional em turmas maiores
+- padronização parcial de critérios
+- melhor escalabilidade em comparação com correção totalmente manual
 
-Risco de negócio:
+Limite importante:
 
-- um avaliador injusto pode prejudicar estudantes ou usuários
-- uma chave exposta pode gerar custo indevido
-- um deployment errado pode quebrar a entrega no dia da apresentação
+- o sistema não deve ser tratado como substituto absoluto do julgamento humano, principalmente em contextos avaliativos formais
 
-Mitigação:
+## 12. Riscos e cuidados
 
-- manter `.env` fora do Git
-- usar `--check-config` antes da demo
-- preparar exemplos offline da versão `mais_ou_menos`
-- explicar que a nota é apoio avaliativo, não veredito absoluto
+Riscos técnicos e operacionais:
 
-## 25. Limitações
+- um avaliador textual pode punir respostas corretas escritas com vocabulário diferente
+- um avaliador com IA pode produzir justificativa convincente para uma nota discutível
+- credenciais expostas podem gerar custo indevido
+- falha de rede ou deployment pode inviabilizar a demonstração da versão com IA
+
+Medidas de mitigação:
+
+- manter o `.env` fora do versionamento
+- validar o ambiente antes da apresentação
+- preparar casos offline na versão `mais_ou_menos`
+- tratar a nota como apoio à análise, não como verdade absoluta
+
+## 13. Limitações acadêmicas e técnicas
 
 Limitações da versão clássica:
 
-- não entende contexto profundo
-- não entende intenção
-- não valida fatos externos
-- não reconhece todos os sinônimos
-- pode favorecer repetição superficial de palavras-chave
-- pode punir uma resposta correta escrita com outro vocabulário
+- não compreende contexto profundo
+- não distingue bem sinonímia complexa
+- pode confundir repetição de termos com qualidade de resposta
 
 Limitações da versão com IA:
 
-- depende do deployment do Azure
-- pode ter custo
-- pode ficar indisponível por rede, cota ou credencial
-- pode retornar uma justificativa convincente mesmo quando a nota merece revisão
-- precisa de validação humana em usos importantes
+- depende de infraestrutura externa
+- depende de custo e disponibilidade da API
+- pode variar conforme deployment, modelo e configuração
+- ainda exige supervisão humana
 
-## 26. Sugestão de apresentação
+Conclusão crítica:
 
-Roteiro recomendado:
+- o sistema não prova compreensão no sentido humano
+- ele estima evidências de aderência textual ou semântica
+- por isso, a pergunta "a máquina entendeu?" deve ser respondida com cautela e senso crítico
 
-1. Explique a pergunta do trabalho, "a máquina entendeu?"
-2. Mostre rapidamente o fluxo de entrada e saída.
-3. Rode a versão `mais_ou_menos`.
-4. Explique pré-processamento, TF-IDF e cosseno.
-5. Rode uma resposta correta e uma errada.
-6. Rode uma paráfrase correta que a versão clássica avalia mal, se houver.
-7. Rode a mesma paráfrase na versão `topzera`.
-8. Compare os resultados.
-9. Explique os trade-offs, simplicidade e transparência contra custo e semântica.
-10. Conclua que a máquina calcula evidências de entendimento, mas a interpretação final precisa de senso crítico.
+## 14. Sugestão de roteiro para apresentação
 
-## 27. Melhorias futuras
+1. Introduzir a pergunta central do trabalho.
+2. Explicar rapidamente as entradas e saídas do sistema.
+3. Demonstrar a versão `mais_ou_menos`.
+4. Explicar pré-processamento, TF-IDF e similaridade do cosseno.
+5. Mostrar um caso de acerto claro e um caso de erro claro.
+6. Demonstrar um caso de paráfrase que desafie a versão clássica.
+7. Executar a versão `topzera` com o mesmo exemplo.
+8. Comparar os resultados das duas abordagens.
+9. Discutir trade-offs entre transparência, custo e semântica.
+10. Encerrar reforçando que o projeto mede evidências de entendimento, não entendimento absoluto.
 
-Ideias sustentáveis:
+## 15. Melhorias futuras
 
-- criar uma suíte de testes para `topzera` usando mock do cliente Azure
-- salvar resultados em CSV para análise da turma
-- criar matriz de comparação entre nota humana, nota TF-IDF e nota da IA
-- adicionar embeddings como meio termo entre TF-IDF e juiz generativo
-- permitir várias respostas esperadas por pergunta
-- criar uma tela simples para professor revisar notas
-- adicionar rubricas explícitas por pergunta
-- estimar custo antes de avaliar uma lista grande de respostas
+Evoluções sustentáveis para o projeto:
+
+- criar testes automatizados para `topzera` com uso de mock da API
+- armazenar resultados em CSV para análise posterior
+- comparar nota humana, nota clássica e nota da IA em uma mesma base
+- experimentar embeddings como solução intermediária entre TF-IDF e julgamento generativo
+- permitir múltiplas respostas esperadas por pergunta
+- construir uma interface simples para revisão docente
+- adicionar rubricas explícitas por questão
+- estimar custo antes de processar grandes volumes de respostas
+
+## 16. Conclusão
+
+O **Did It Understand?** é um trabalho acadêmico coerente com a disciplina de Inteligência Artificial porque articula fundamentos de Processamento de Linguagem Natural, avaliação automática e reflexão crítica sobre os limites da máquina.
+
+Fato:
+
+- o projeto entrega duas implementações funcionais para avaliação de respostas textuais
+
+Inferência:
+
+- a comparação entre as abordagens fortalece a análise acadêmica e demonstra entendimento técnico do problema
+
+Opinião técnica:
+
+- a principal qualidade do trabalho está em não tratar IA como mágica. Em vez disso, o projeto mostra que diferentes técnicas produzem sinais diferentes, com custos, vantagens e riscos próprios. Isso torna a entrega mais sólida, mais honesta e mais alinhada com uma visão profissional de uso de Inteligência Artificial.
