@@ -60,6 +60,13 @@ did-it-understand/
 
 ## Preparar ambiente
 
+Se você ainda não trouxe o projeto para a sua máquina, clone o repositório:
+
+```powershell
+git clone https://github.com/cidade-felipe/did-it-understand.git
+cd did-it-understand
+```
+
 Use o ambiente virtual `venv` do projeto.
 
 Para instalar as dependências do projeto:
