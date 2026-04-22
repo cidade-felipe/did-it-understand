@@ -10,7 +10,9 @@ from avaliador_openai import ResultadoAvaliacaoIA, avaliar_resposta_com_ia, carr
 
 def construir_parser() -> argparse.ArgumentParser:
     '''Monta o parser da CLI do avaliador baseado em Azure OpenAI.
-
+    Parser é a peça central da interface de linha de comando, definindo quais 
+    argumentos o programa aceita, como eles são interpretados e quais mensagens 
+    de ajuda são exibidas.
     Esta funcao define o contrato de entrada da aplicacao. As flags principais
     sao ``--pergunta``, ``--esperada`` e ``--usuario``, que alimentam a
     avaliacao, e ``--check-config``, que permite validar o ambiente sem chamar
