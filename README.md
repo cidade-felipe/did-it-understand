@@ -16,7 +16,8 @@ As alterações mais relevantes já incorporadas no código e agora refletidas n
 - a manutenção das duas CLIs, o que preserva automação, depuração e execução reproduzível;
 - a validação de configuração do Azure OpenAI sem consumir tokens, disponível tanto na CLI `topzera` quanto na GUI;
 - o reaproveitamento dos exemplos de `mais_ou_menos/exemplos.json` dentro da interface gráfica;
-- a consolidação da arquitetura em torno de dois motores reutilizáveis, sem duplicar regra de negócio na camada visual.
+- a consolidação da arquitetura em torno de dois motores reutilizáveis, sem duplicar regra de negócio na camada visual;
+- a revisão da documentação interna e externa, com docstrings mais detalhadas e arquivos `.md` alinhados ao comportamento real das funções.
 
 Impacto prático:
 
@@ -43,6 +44,20 @@ Opinião técnica:
 
 - a melhor forma de apresentar o projeto é mostrar a GUI como camada de uso e, por trás dela, explicar os dois motores;
 - isso é superior a documentar só a teoria, porque conecta implementação, usabilidade e trade-offs reais de operação.
+
+## Como a documentação está organizada
+
+O projeto agora separa a documentação em três níveis complementares:
+
+- `README.md`, para onboarding rápido, execução e visão executiva;
+- `documentation.md`, para arquitetura, decisões técnicas, trade-offs e fluxo operacional;
+- `documentacao_funcoes_pln.md`, para leitura detalhada das funções, classes, variáveis principais e responsabilidades de cada camada.
+
+Impacto prático:
+
+- reduz tempo de entendimento para quem vai apresentar, manter ou evoluir o projeto;
+- melhora rastreabilidade, porque a documentação externa agora conversa melhor com as docstrings do código;
+- diminui risco de suporte, já que a lógica central dos motores ficou mais fácil de auditar.
 
 ## Estrutura real do repositório
 
@@ -197,6 +212,12 @@ A nota combina:
 - `80%` da similaridade TF-IDF;
 - `20%` da cobertura de palavras-chave.
 
+Funções e variáveis que mais importam:
+
+- `preprocessar_texto()` gera `tokens`, `tokens_comparacao` e `texto_processado`, que são a base da comparação;
+- `calcular_similaridade_tfidf()` monta `documento_esperado`, `documento_usuario` e `matriz_tfidf` para medir proximidade lexical;
+- `avaliar_resposta()` combina `similaridade` e `cobertura_palavras_chave` em `nota_base`, classifica o `feedback` e gera `observacoes`.
+
 Classificação padrão:
 
 - `70` ou mais: `Entendeu`;
@@ -214,6 +235,12 @@ A saída mostra:
 - `Pontos corretos`;
 - `Lacunas`;
 - `Alertas`.
+
+Funções e variáveis que mais importam:
+
+- `carregar_configuracao()` resolve `api_key`, `endpoint`, `deployment`, `api_version` e `temperatura`;
+- `avaliar_resposta_com_ia()` monta o dicionário `parametros`, chama a API, extrai `conteudo` e converte a resposta em `dados`;
+- `montar_resultado()` saneia `nota`, `similaridade_semantica`, `feedback` e listas explicativas para proteger a interface contra saídas inconsistentes.
 
 Fato:
 

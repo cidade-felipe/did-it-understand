@@ -56,7 +56,8 @@ As alterações mais relevantes que já existiam no código e agora passam a est
 - atualização da árvore do repositório para refletir a estrutura real;
 - inclusão do fluxo de execução da GUI junto com as duas CLIs;
 - documentação da validação de credenciais do Azure OpenAI sem consumo de tokens;
-- explicitação do gap atual de testes automatizados, que hoje cobre o motor clássico, mas não a GUI nem a integração real com Azure.
+- explicitação do gap atual de testes automatizados, que hoje cobre o motor clássico, mas não a GUI nem a integração real com Azure;
+- ampliação das docstrings dos módulos `mais_ou_menos` e `topzera`, com foco em variáveis centrais, responsabilidades e impacto de cada etapa do fluxo.
 
 Impacto prático:
 
@@ -315,6 +316,20 @@ Risco técnico:
 
 - respostas corretas com vocabulário muito diferente podem ser subavaliadas.
 
+### 8.5 Funções centrais e variáveis importantes
+
+As funções mais importantes do motor clássico são:
+
+- `preprocessar_texto()`, que transforma o texto bruto em `normalizado`, `tokens`, `tokens_comparacao` e `texto_processado`;
+- `calcular_similaridade_tfidf()`, que cria `documento_esperado`, `documento_usuario`, `matriz_tfidf` e `matriz_similaridade`;
+- `avaliar_resposta()`, que usa `resposta_esperada_proc`, `resposta_usuario_proc`, `palavras_chave`, `palavras_encontradas`, `cobertura_palavras_chave`, `similaridade`, `nota_base` e `feedback`.
+
+Impacto prático:
+
+- essa separação melhora interpretabilidade;
+- facilita depuração em sala ou em banca;
+- reduz risco de tratar a nota como caixa-preta.
+
 ## 9. Versão 2, `topzera`
 
 ### 9.1 Objetivo
@@ -383,6 +398,21 @@ Limitações:
 - pode gerar custo por uso;
 - apresenta menor reprodutibilidade que a versão clássica;
 - exige validação humana em usos relevantes.
+
+### 9.5 Funções centrais e variáveis importantes
+
+As funções mais importantes do motor semântico são:
+
+- `carregar_configuracao()`, que consolida `api_key`, `endpoint`, `deployment`, `api_version` e `temperatura`;
+- `normalizar_endpoint_azure()`, que usa `partes`, `caminho`, `indice_openai` e `endpoint_limpo` para tolerar erros comuns de configuração;
+- `avaliar_resposta_com_ia()`, que cria `cliente`, monta `parametros`, recebe `resposta`, extrai `conteudo`, converte para `dados` e chama `montar_resultado()`;
+- `montar_resultado()`, que saneia `nota`, `similaridade`, `feedback`, `pontos_corretos`, `lacunas` e `alertas`.
+
+Impacto prático:
+
+- melhora robustez contra respostas malformadas da API;
+- reduz custo de diagnóstico quando o problema está na configuração e não no modelo;
+- torna a integração mais segura para uso em demonstração e manutenção futura.
 
 ## 10. Camada de interface gráfica
 

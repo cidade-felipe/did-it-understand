@@ -4,6 +4,12 @@
 
 Este documento explica, função por função, as duas formas de avaliação implementadas no projeto **Did It Understand?** e a camada de interface gráfica que orquestra essas avaliações para uso humano.
 
+Nesta revisão, o documento também passa a destacar com mais clareza:
+
+- as variáveis principais de cada fluxo;
+- o motivo de design por trás das funções centrais;
+- o impacto prático de cada decisão na manutenção, na apresentação e na confiabilidade do resultado.
+
 As formas de uso do projeto são:
 
 - `mais_ou_menos`, abordagem clássica de PLN com pré-processamento, TF-IDF, similaridade do cosseno e cobertura de palavras-chave;
@@ -199,6 +205,13 @@ Por que existe:
 - evita duplicação no avaliador;
 - facilita comparar a resposta esperada e a resposta do usuário com a mesma regra.
 
+Variáveis principais do fluxo:
+
+- `normalizado`, versão padronizada do texto;
+- `tokens`, lista de palavras limpas depois da normalização;
+- `stopwords_ativas`, conjunto efetivo usado na filtragem;
+- `tokens_comparacao`, representação final usada nas métricas.
+
 Ponto importante:
 
 - se `remover_stopwords=True`, palavras comuns como `de`, `a`, `que`, `para` e `com` são removidas;
@@ -275,6 +288,11 @@ Por que existe:
 - permite normalizar a nota mesmo que os pesos sejam alterados;
 - evita deixar a fórmula presa aos valores `0.8` e `0.2`.
 
+Impacto prático:
+
+- reduz risco de inconsistência entre validação de configuração e cálculo da nota;
+- deixa o motor mais sustentável caso a calibragem da fórmula mude no futuro.
+
 Exemplo:
 
 ```text
@@ -322,6 +340,11 @@ Por que existe:
 - evita resultados incoerentes;
 - antecipa erros de configuração.
 
+Variáveis que essa função protege:
+
+- `peso_similaridade` e `peso_palavras_chave`, porque a soma precisa ser positiva;
+- `limite_parcial` e `limite_entendeu`, porque a hierarquia entre as faixas precisa fazer sentido.
+
 Exemplo de problema evitado:
 
 ```text
@@ -344,6 +367,12 @@ Etapas:
 5. transforma os dois textos em vetores TF-IDF;
 6. calcula a similaridade do cosseno entre os vetores;
 7. retorna um número entre `0.0` e `1.0`.
+
+Variáveis principais:
+
+- `documento_esperado` e `documento_usuario`, que condensam os tokens em formato aceito pelo vetorizador;
+- `matriz_tfidf`, que representa o peso relativo dos termos;
+- `matriz_similaridade`, que converte a comparação vetorial em um valor simples para a nota.
 
 Por que existe:
 
@@ -392,6 +421,13 @@ Ela considera:
 - se a resposta do usuário é muito mais curta que a esperada;
 - quais palavras-chave foram encontradas.
 
+Variáveis principais:
+
+- `similaridade`, para leitura de proximidade textual;
+- `cobertura_palavras_chave`, para leitura de aderência conceitual;
+- `palavras_chave_encontradas`, para explicar concretamente o que foi reconhecido;
+- `proporcao_tamanho`, para indicar quando a resposta pode estar superficial por ser curta demais.
+
 Por que existe:
 
 - a nota sozinha não explica o resultado;
@@ -424,6 +460,16 @@ Ela coordena todo o processo:
 12. gera observações;
 13. retorna um `ResultadoAvaliacao`.
 
+Variáveis e artefatos mais importantes:
+
+- `resposta_esperada_proc` e `resposta_usuario_proc`, que guardam os textos já preparados para comparação;
+- `palavras_chave`, conjunto de conceitos centrais extraídos da resposta esperada;
+- `palavras_encontradas`, subconjunto dessas palavras reconhecido na resposta do usuário;
+- `cobertura_palavras_chave`, fração de conceitos cobertos;
+- `similaridade`, sinal principal de proximidade lexical;
+- `nota_base`, combinação ponderada antes da escala final de `0` a `100`;
+- `feedback`, classificação final que traduz a nota em leitura humana.
+
 Fórmula padrão:
 
 ```text
@@ -439,6 +485,7 @@ Por que existe:
 Opinião técnica:
 
 - a função está bem posicionada como orquestradora, porque as tarefas menores foram separadas em funções auxiliares.
+- isso reduz acoplamento e facilita manutenção, depuração e explicação em apresentação.
 
 ## 5. Funções da CLI clássica
 
@@ -463,6 +510,12 @@ Por que existe:
 
 - permite executar o programa de forma interativa ou passando todos os dados por comando;
 - facilita testes rápidos e demonstrações.
+
+Variáveis de entrada mais importantes:
+
+- `--pergunta`, `--esperada` e `--usuario`, que alimentam a avaliação;
+- `--manter-stopwords` e `--sem-stemming`, que mudam o comportamento do pré-processamento;
+- `--detalhes`, que muda profundidade da saída.
 
 Exemplo de uso:
 
@@ -496,6 +549,12 @@ Exibe:
 - cobertura de palavras-chave;
 - detalhes do pré-processamento, se `mostrar_detalhes=True`;
 - observações interpretativas.
+
+Variáveis centrais para leitura humana:
+
+- `resultado.nota` e `resultado.feedback`, que resumem o desfecho;
+- `resultado.similaridade` e `resultado.cobertura_palavras_chave`, que explicam a origem da nota;
+- `mostrar_detalhes`, que define o nível de aprofundamento exibido.
 
 Por que existe:
 
@@ -674,6 +733,15 @@ Variáveis aceitas:
 - deployment: `AZURE_OPENAI_DEPLOYMENT`, `AZURE_OPENAI_MODEL`, `AZURE_DEPLOYMENT` ou `OPENAI_MODEL`;
 - versão: `AZURE_OPENAI_API_VERSION` ou `OPENAI_API_VERSION`.
 
+Variáveis principais:
+
+- `api_key`, para autenticação;
+- `endpoint`, destino base do recurso Azure;
+- `deployment`, nome real da implantação usada pelo SDK;
+- `api_version`, versão da API;
+- `temperatura`, parâmetro opcional de comportamento do modelo;
+- `ausentes`, lista usada para falhar cedo com mensagem útil.
+
 Por que existe:
 
 - separa configuração da lógica de avaliação;
@@ -758,6 +826,13 @@ Por que existe:
 - copiar uma URL completa do portal pode causar erro;
 - a função torna a configuração mais tolerante.
 
+Variáveis principais:
+
+- `partes`, resultado de `urlsplit`;
+- `caminho`, trecho da URL que pode precisar de limpeza;
+- `indice_openai`, ponto de corte quando há rota excedente;
+- `endpoint_limpo`, valor final devolvido ao restante do sistema.
+
 ### 7.9. `criar_cliente(configuracao: ConfiguracaoAzureOpenAI)`
 
 Cria o cliente `AzureOpenAI`.
@@ -790,6 +865,15 @@ Ela faz:
 8. converte o conteúdo JSON em dicionário;
 9. monta e retorna `ResultadoAvaliacaoIA`.
 
+Variáveis principais do fluxo:
+
+- `configuracao`, que define como a chamada será feita;
+- `cliente`, conexão pronta para uso com o Azure OpenAI;
+- `parametros`, dicionário enviado à API;
+- `resposta`, retorno bruto do SDK;
+- `conteudo`, JSON textual vindo do modelo;
+- `dados`, versão já parseada e pronta para saneamento.
+
 Por que existe:
 
 - concentra o fluxo de avaliação semântica;
@@ -803,6 +887,10 @@ Riscos em ambiente real:
 - indisponibilidade da API;
 - resposta inválida ou fora do formato esperado;
 - julgamento inconsistente em casos ambíguos.
+
+Opinião técnica:
+
+- a separação entre chamada da API, parsing e montagem do resultado reduz acoplamento e facilita tratar falhas com mais precisão.
 
 ### 7.11. `montar_mensagens(pergunta, resposta_esperada, resposta_usuario) -> list[dict[str, str]]`
 
@@ -819,6 +907,11 @@ A instrução pede que o modelo:
 - aceite paráfrases corretas;
 - penalize contradições, fuga do tema e vagueza;
 - retorne somente JSON válido.
+
+Variáveis principais:
+
+- `instrucao_sistema`, que fixa a rubrica e o schema esperado;
+- `tarefa_usuario`, que injeta o caso concreto a ser avaliado.
 
 Por que existe:
 
@@ -840,6 +933,12 @@ Ela normaliza:
 - `similaridade_semantica`, limitada entre `0.0` e `1.0`;
 - `feedback`, convertido para um dos rótulos aceitos;
 - `pontos_corretos`, `lacunas` e `alertas`, convertidos para listas limpas.
+
+Variáveis principais:
+
+- `nota` e `similaridade`, saneadas por `limitar_float`;
+- `feedback`, padronizado por `normalizar_feedback`;
+- `pontos_corretos`, `lacunas` e `alertas`, saneados por `normalizar_lista`.
 
 Por que existe:
 
@@ -863,6 +962,10 @@ Por que existe:
 - a saída do modelo precisa ser confiável para o restante do código;
 - evita tentar usar uma string comum como se fosse dicionário.
 
+Ponto crítico:
+
+- essa função é a fronteira entre texto livre do modelo e estrutura previsível do sistema.
+
 ### 7.14. `limitar_float(valor, minimo, maximo) -> float`
 
 Converte um valor para `float` e limita esse valor a uma faixa.
@@ -880,6 +983,11 @@ Por que existe:
 
 - protege o sistema contra respostas fora da escala;
 - garante que nota e similaridade fiquem em limites válidos.
+
+Variáveis principais:
+
+- `valor`, dado bruto vindo da API;
+- `minimo` e `maximo`, faixa segura permitida para o campo.
 
 ### 7.15. `normalizar_feedback(feedback_modelo: str, nota: float) -> str`
 
@@ -910,6 +1018,11 @@ Por que existe:
 
 - modelos podem variar palavras;
 - a aplicação precisa de feedback padronizado.
+
+Variáveis principais:
+
+- `feedback_modelo`, rótulo textual bruto;
+- `nota`, fallback usado quando o rótulo não cai na taxonomia conhecida.
 
 ### 7.16. `normalizar_lista(valor: Any) -> list[str]`
 
@@ -948,6 +1061,11 @@ Por que existe:
 
 - permite uso por linha de comando;
 - permite validar configuração sem gastar tokens com chamada à API.
+
+Variáveis de entrada mais importantes:
+
+- `--pergunta`, `--esperada` e `--usuario`, que alimentam a avaliação semântica;
+- `--check-config`, que isola diagnóstico de ambiente sem consumo da API.
 
 ### 8.3. `ler_entrada_interativa() -> tuple[str, str, str]`
 
@@ -997,6 +1115,12 @@ Por que existe:
 - confirma se o `.env` está configurado;
 - reduz risco de erro durante apresentação;
 - evita gasto de tokens apenas para testar configuração básica.
+
+Variáveis exibidas:
+
+- `endpoint`, para checar se o recurso foi resolvido corretamente;
+- `deployment`, para confirmar o nome operacional do modelo;
+- `api_version`, para validar compatibilidade de chamada.
 
 ### 8.7. `main() -> int`
 

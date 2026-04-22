@@ -116,7 +116,10 @@ Um trabalho forte deve mostrar não só o resultado final, mas também o racioc�
 
 ## 6. Estrutura sugerida do projeto
 
-Uma estrutura simples e suficiente:
+Para o enunciado puro, uma estrutura mínima ainda seria suficiente. Mas o
+repositório atual já evoluiu além desse mínimo.
+
+Estrutura mínima conceitual:
 
 ```text
 did-it-understand/
@@ -128,16 +131,34 @@ did-it-understand/
 └─ README.md
 ```
 
-Se o grupo fizer interface:
+Estrutura real do projeto hoje:
 
 ```text
 did-it-understand/
-├─ app.py
-├─ avaliador.py
-├─ preprocessamento.py
-├─ exemplos.json
-└─ README.md
+├─ gui.py
+├─ mais_ou_menos/
+│  ├─ avaliador.py
+│  ├─ preprocessamento.py
+│  ├─ main.py
+│  ├─ exemplos.json
+│  ├─ test_avaliador.py
+│  └─ testes_exemplos.py
+├─ topzera/
+│  ├─ avaliador_openai.py
+│  └─ main.py
+├─ README.md
+├─ documentation.md
+├─ documentacao_funcoes_pln.md
+├─ GUIA_TRABALHO.md
+└─ requirements.txt
 ```
+
+Opinião técnica:
+
+- essa estrutura atual é superior à versão mínima porque separa responsabilidades;
+- `mais_ou_menos` concentra o motor clássico;
+- `topzera` isola a integração com Azure OpenAI;
+- `gui.py` reaproveita os dois motores sem duplicar regra de negócio.
 
 ## 7. Esquema de implementação
 
@@ -252,14 +273,15 @@ Ou seja: não basta mostrar a nota saindo na tela. É importante justificar o co
 Um roteiro seguro:
 
 1. apresentar o objetivo do sistema
-2. mostrar a entrada e a saída
-3. explicar o pré-processamento
-4. explicar `TF-IDF` e cosseno de forma simples
-5. mostrar a regra da nota
-6. rodar testes diferentes
-7. mostrar casos em que funciona
-8. mostrar casos em que falha
-9. concluir que comparar texto não equivale a entender linguagem
+2. abrir a GUI para mostrar a entrada e a saída de forma visual
+3. explicar que a GUI só orquestra dois motores já existentes
+4. explicar o pré-processamento da versão `mais_ou_menos`
+5. explicar `TF-IDF` e cosseno de forma simples
+6. mostrar a regra da nota e a cobertura de palavras-chave
+7. trocar para `topzera` e explicar a avaliação semântica
+8. rodar testes diferentes
+9. mostrar casos em que funciona e em que falha
+10. concluir que comparar texto não equivale, por si só, a entender linguagem
 
 ## 13. Caminho mais seguro para tirar uma boa impressão
 
