@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field # Serve para criar classes simples de dados com menos  boilerplate, ou seja, sem precisar escrever métodos como __init__ ou __repr__ manualmente.
 from json import JSONDecodeError
-from typing import Any
-from urllib.parse import urlsplit, urlunsplit
+from typing import Any # Fornece tipos genéricos para anotações, como Any, List, Dict, etc. Aqui é usado para indicar que um valor pode ser de qualquer tipo, especialmente útil ao lidar com dados JSON que podem ter estrutura variada.
+from urllib.parse import urlsplit, urlunsplit # urlsplit é usado para dividir uma URL em seus componentes (esquema, netloc, caminho, query, fragmento), enquanto urlunsplit é usado para recompor uma URL a partir desses componentes. No código, essas funções são usadas para normalizar o endpoint do Azure OpenAI, removendo partes indesejadas da URL.
 
 from dotenv import load_dotenv
 
