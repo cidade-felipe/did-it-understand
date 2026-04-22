@@ -1,4 +1,4 @@
-"""Funcoes de pre-processamento para o trabalho de PLN."""
+'''Funcoes de pre-processamento para o trabalho de PLN.'''
 
 from __future__ import annotations
 
@@ -9,114 +9,114 @@ from nltk.stem import SnowballStemmer
 from unidecode import unidecode
 
 
-STEMMER_PORTUGUES = SnowballStemmer("portuguese")
+STEMMER_PORTUGUES = SnowballStemmer('portuguese')
 
 
 STOPWORDS_PADRAO = {
-    "a",
-    "ao",
-    "aos",
-    "aquela",
-    "aquelas",
-    "aquele",
-    "aqueles",
-    "aquilo",
-    "as",
-    "ate",
-    "com",
-    "como",
-    "da",
-    "das",
-    "de",
-    "dela",
-    "dele",
-    "deles",
-    "delas",
-    "depois",
-    "do",
-    "dos",
-    "e",
-    "ela",
-    "elas",
-    "ele",
-    "eles",
-    "em",
-    "entre",
-    "era",
-    "eram",
-    "essa",
-    "essas",
-    "esse",
-    "esses",
-    "esta",
-    "estao",
-    "estas",
-    "este",
-    "estes",
-    "eu",
-    "foi",
-    "foram",
-    "ha",
-    "isso",
-    "isto",
-    "ja",
-    "la",
-    "lhe",
-    "lhes",
-    "mais",
-    "mas",
-    "me",
-    "mesmo",
-    "meu",
-    "meus",
-    "minha",
-    "minhas",
-    "muito",
-    "na",
-    "nao",
-    "nas",
-    "nem",
-    "no",
-    "nos",
-    "nossa",
-    "nossas",
-    "nosso",
-    "nossos",
-    "num",
-    "numa",
-    "o",
-    "os",
-    "ou",
-    "para",
-    "pela",
-    "pelas",
-    "pelo",
-    "pelos",
-    "por",
-    "qual",
-    "quando",
-    "que",
-    "quem",
-    "se",
-    "sem",
-    "ser",
-    "sera",
-    "seu",
-    "seus",
-    "sua",
-    "suas",
-    "tambem",
-    "te",
-    "tem",
-    "tendo",
-    "tenho",
-    "ter",
-    "tinha",
-    "tinham",
-    "um",
-    "uma",
-    "voce",
-    "voces",
+    'a',
+    'ao',
+    'aos',
+    'aquela',
+    'aquelas',
+    'aquele',
+    'aqueles',
+    'aquilo',
+    'as',
+    'ate',
+    'com',
+    'como',
+    'da',
+    'das',
+    'de',
+    'dela',
+    'dele',
+    'deles',
+    'delas',
+    'depois',
+    'do',
+    'dos',
+    'e',
+    'ela',
+    'elas',
+    'ele',
+    'eles',
+    'em',
+    'entre',
+    'era',
+    'eram',
+    'essa',
+    'essas',
+    'esse',
+    'esses',
+    'esta',
+    'estao',
+    'estas',
+    'este',
+    'estes',
+    'eu',
+    'foi',
+    'foram',
+    'ha',
+    'isso',
+    'isto',
+    'ja',
+    'la',
+    'lhe',
+    'lhes',
+    'mais',
+    'mas',
+    'me',
+    'mesmo',
+    'meu',
+    'meus',
+    'minha',
+    'minhas',
+    'muito',
+    'na',
+    'nao',
+    'nas',
+    'nem',
+    'no',
+    'nos',
+    'nossa',
+    'nossas',
+    'nosso',
+    'nossos',
+    'num',
+    'numa',
+    'o',
+    'os',
+    'ou',
+    'para',
+    'pela',
+    'pelas',
+    'pelo',
+    'pelos',
+    'por',
+    'qual',
+    'quando',
+    'que',
+    'quem',
+    'se',
+    'sem',
+    'ser',
+    'sera',
+    'seu',
+    'seus',
+    'sua',
+    'suas',
+    'tambem',
+    'te',
+    'tem',
+    'tendo',
+    'tenho',
+    'ter',
+    'tinha',
+    'tinham',
+    'um',
+    'uma',
+    'voce',
+    'voces',
 }
 
 
@@ -130,7 +130,7 @@ class TextoProcessado:
 
 
 def remover_acentos(texto: str) -> str:
-    """Remove acentos e caracteres diacriticos de um texto.
+    '''Remove acentos e caracteres diacriticos de um texto.
 
     Essa etapa reduz variacoes ortograficas que atrapalham comparacoes
     lexicais, principalmente quando respostas equivalentes usam grafias com e
@@ -141,12 +141,12 @@ def remover_acentos(texto: str) -> str:
 
     Returns:
         Texto convertido para uma representacao ASCII aproximada.
-    """
+    '''
     return unidecode(texto)
 
 
 def normalizar_texto(texto: str) -> str:
-    """Padroniza o texto para as etapas seguintes do pipeline.
+    '''Padroniza o texto para as etapas seguintes do pipeline.
 
     O processamento converte para minusculas, remove acentos, substitui
     pontuacao por espacos e colapsa espacamentos repetidos. O tratamento de
@@ -157,16 +157,16 @@ def normalizar_texto(texto: str) -> str:
 
     Returns:
         Texto limpo e padronizado para tokenizacao.
-    """
-    texto = "" if texto is None else texto
+    '''
+    texto = '' if texto is None else texto
     texto = remover_acentos(texto.lower()).strip()
-    texto = re.sub(r"[^\w\s]", " ", texto, flags=re.UNICODE)
-    texto = re.sub(r"\s+", " ", texto).strip()
+    texto = re.sub(r'[^\w\s]', ' ', texto, flags=re.UNICODE)
+    texto = re.sub(r'\s+', ' ', texto).strip()
     return texto
 
 
 def tokenizar(texto: str) -> list[str]:
-    """Extrai tokens alfanumericos simples do texto normalizado.
+    '''Extrai tokens alfanumericos simples do texto normalizado.
 
     A expressao regular prioriza simplicidade e previsibilidade, o que e
     suficiente para o escopo do projeto e reduz a dependencia de tokenizadores
@@ -178,12 +178,12 @@ def tokenizar(texto: str) -> list[str]:
     Returns:
         Lista de tokens em ordem de aparicao. Retorna lista vazia quando o
         texto nao possui conteudo util.
-    """
-    return re.findall(r"[a-z0-9]+", texto) if texto else []
+    '''
+    return re.findall(r'[a-z0-9]+', texto) if texto else []
 
 
 def radicalizar_token(token: str) -> str:
-    """Aplica stemming em um token usando o algoritmo em portugues.
+    '''Aplica stemming em um token usando o algoritmo em portugues.
 
     O radical resultante e usado para comparacao aproximada entre palavras de
     mesma familia, como singular e plural ou flexoes verbais.
@@ -193,7 +193,7 @@ def radicalizar_token(token: str) -> str:
 
     Returns:
         Radical calculado pelo ``SnowballStemmer`` para portugues.
-    """
+    '''
     return STEMMER_PORTUGUES.stem(token)
 
 
@@ -203,7 +203,7 @@ def preprocessar_texto(
     aplicar_stemming: bool = True,
     stopwords: set[str] | None = None,
 ) -> TextoProcessado:
-    """Executa o pipeline completo de pre-processamento textual.
+    '''Executa o pipeline completo de pre-processamento textual.
 
     O fluxo atual combina normalizacao, tokenizacao, remocao opcional de
     stopwords e stemming opcional. O resultado preserva tanto os tokens limpos
@@ -222,7 +222,7 @@ def preprocessar_texto(
     Returns:
         Estrutura ``TextoProcessado`` com texto normalizado, tokens limpos,
         tokens usados na comparacao e a representacao final concatenada.
-    """
+    '''
     normalizado = normalizar_texto(texto)
     tokens = tokenizar(normalizado)
 
@@ -237,16 +237,16 @@ def preprocessar_texto(
     tokens_comparacao = [radicalizar_token(token) for token in tokens] if aplicar_stemming else tokens
 
     return TextoProcessado(
-        original="" if texto is None else texto,
+        original='' if texto is None else texto,
         normalizado=normalizado,
         tokens=tokens,
         tokens_comparacao=tokens_comparacao,
-        texto_processado=" ".join(tokens_comparacao),
+        texto_processado=' '.join(tokens_comparacao),
     )
 
 
 def extrair_palavras_chave(tokens: list[str], limite: int = 6) -> list[str]:
-    """Seleciona palavras-chave por frequencia e ordem de aparicao.
+    '''Seleciona palavras-chave por frequencia e ordem de aparicao.
 
     Tokens muito curtos sao ignorados para reduzir ruido. Em seguida, os
     termos sao ordenados pela frequencia decrescente e, em caso de empate, pela
@@ -260,7 +260,7 @@ def extrair_palavras_chave(tokens: list[str], limite: int = 6) -> list[str]:
     Returns:
         Lista ordenada com as palavras-chave consideradas mais representativas.
         Retorna lista vazia quando o limite informado nao for positivo.
-    """
+    '''
     if limite <= 0:
         return []
 

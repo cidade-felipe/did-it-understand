@@ -1,4 +1,4 @@
-"""Motor de avaliacao de respostas com TF-IDF e similaridade do cosseno."""
+'''Motor de avaliacao de respostas com TF-IDF e similaridade do cosseno.'''
 
 from __future__ import annotations
 
@@ -26,11 +26,11 @@ class ConfiguracaoAvaliacao:
     limite_parcial: float = 30.0
 
     def soma_pesos(self) -> float:
-        """Retorna a soma dos pesos usados na composicao da nota final.
+        '''Retorna a soma dos pesos usados na composicao da nota final.
 
         Centralizar esse calculo em um unico ponto evita divergencia entre a
         validacao da configuracao e a formula usada para gerar a nota.
-        """
+        '''
         return self.peso_similaridade + self.peso_palavras_chave
 
 
@@ -51,7 +51,7 @@ class ResultadoAvaliacao:
 
 
 def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
-    """Valida se a configuracao permite uma avaliacao coerente.
+    '''Valida se a configuracao permite uma avaliacao coerente.
 
     A funcao protege o pipeline contra pesos inconsistentes e contra limites
     de classificacao invertidos, o que poderia gerar notas validas do ponto de
@@ -63,15 +63,15 @@ def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
     Raises:
         ValueError: Quando a soma dos pesos e invalida ou os limites de
             classificacao estao incoerentes.
-    """
+    '''
     if configuracao.soma_pesos() <= 0:
-        raise ValueError("A soma dos pesos precisa ser maior que zero.")
+        raise ValueError('A soma dos pesos precisa ser maior que zero.')
     if configuracao.limite_parcial > configuracao.limite_entendeu:
-        raise ValueError("O limite de parcial nao pode ser maior que o limite de entendeu.")
+        raise ValueError('O limite de parcial nao pode ser maior que o limite de entendeu.')
 
 
 def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: list[str]) -> float:
-    """Calcula a similaridade vetorial entre duas listas de tokens.
+    '''Calcula a similaridade vetorial entre duas listas de tokens.
 
     O texto esperado e o texto do usuario sao transformados em documentos
     artificiais para que o TF-IDF compare a distribuicao dos termos. O retorno
@@ -85,9 +85,9 @@ def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: lis
     Returns:
         Similaridade do cosseno entre os vetores TF-IDF dos dois documentos.
         Retorna 0.0 quando algum dos lados fica vazio apos o pre-processamento.
-    """
-    documento_esperado = " ".join(tokens_esperados)
-    documento_usuario = " ".join(tokens_usuario)
+    '''
+    documento_esperado = ' '.join(tokens_esperados)
+    documento_usuario = ' '.join(tokens_usuario)
     if not documento_esperado or not documento_usuario:
         return 0.0
 
@@ -103,19 +103,19 @@ def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: lis
 
 
 def _classificar_feedback(nota: float, configuracao: ConfiguracaoAvaliacao) -> str:
-    """Traduz a nota numerica em uma categoria de feedback.
+    '''Traduz a nota numerica em uma categoria de feedback.
 
     Args:
         nota: Nota final ja normalizada na escala de 0 a 100.
         configuracao: Configuracao com os limites que separam os niveis
-            "Entendeu", "Parcial" e "Nao entendeu".
+            'Entendeu', 'Parcial' e 'Nao entendeu'.
 
     Returns:
         Rotulo textual apropriado para a faixa em que a nota se encontra.
-    """
+    '''
     if nota >= configuracao.limite_entendeu:
-        return "Entendeu"
-    return "Parcial" if nota >= configuracao.limite_parcial else "Nao entendeu"
+        return 'Entendeu'
+    return 'Parcial' if nota >= configuracao.limite_parcial else 'Nao entendeu'
 
 
 def _gerar_observacoes(
@@ -125,7 +125,7 @@ def _gerar_observacoes(
     cobertura_palavras_chave: float,
     palavras_chave_encontradas: list[str],
 ) -> list[str]:
-    """Gera observacoes textuais para ajudar a interpretar a nota.
+    '''Gera observacoes textuais para ajudar a interpretar a nota.
 
     As observacoes resumem heuristicas importantes do avaliador, como
     proximidade textual, cobertura das palavras-chave centrais e diferenca de
@@ -144,38 +144,38 @@ def _gerar_observacoes(
     Returns:
         Lista ordenada de observacoes em linguagem natural para complementar a
         interpretacao da nota final.
-    """
+    '''
     observacoes: list[str] = []
 
     if not resposta_usuario.tokens:
         observacoes.append(
-            "A resposta do usuario ficou vazia depois do pre-processamento, por isso a nota foi zerada."
+            'A resposta do usuario ficou vazia depois do pre-processamento, por isso a nota foi zerada.'
         )
         return observacoes
 
     if similaridade >= 0.75:
-        observacoes.append("A estrutura textual ficou bem proxima da resposta esperada.")
+        observacoes.append('A estrutura textual ficou bem proxima da resposta esperada.')
     elif similaridade >= 0.4:
-        observacoes.append("Ha proximidade textual moderada entre as respostas.")
+        observacoes.append('Ha proximidade textual moderada entre as respostas.')
     else:
-        observacoes.append("A proximidade textual ficou baixa, indicando pouca sobreposicao de termos.")
+        observacoes.append('A proximidade textual ficou baixa, indicando pouca sobreposicao de termos.')
 
     if cobertura_palavras_chave == 0:
-        observacoes.append("Nenhuma palavra-chave principal da resposta esperada apareceu na resposta do usuario.")
+        observacoes.append('Nenhuma palavra-chave principal da resposta esperada apareceu na resposta do usuario.')
     elif cobertura_palavras_chave < 0.5:
-        observacoes.append("A resposta cobriu apenas parte das palavras-chave mais importantes.")
+        observacoes.append('A resposta cobriu apenas parte das palavras-chave mais importantes.')
     else:
-        observacoes.append("A resposta recuperou boa parte das palavras-chave centrais.")
+        observacoes.append('A resposta recuperou boa parte das palavras-chave centrais.')
 
     proporcao_tamanho = len(resposta_usuario.tokens) / max(len(resposta_esperada.tokens), 1)
     if proporcao_tamanho < 0.5:
         observacoes.append(
-            "A resposta do usuario e bem mais curta que a esperada, o que pode indicar explicacao incompleta."
+            'A resposta do usuario e bem mais curta que a esperada, o que pode indicar explicacao incompleta.'
         )
 
     if palavras_chave_encontradas:
         observacoes.append(
-            "Palavras-chave encontradas: " + ", ".join(palavras_chave_encontradas) + "."
+            'Palavras-chave encontradas: ' + ', '.join(palavras_chave_encontradas) + '.'
         )
 
     return observacoes
@@ -187,7 +187,7 @@ def avaliar_resposta(
     resposta_usuario: str,
     configuracao: ConfiguracaoAvaliacao | None = None,
 ) -> ResultadoAvaliacao:
-    """Avalia o quanto a resposta do usuario se aproxima da resposta esperada.
+    '''Avalia o quanto a resposta do usuario se aproxima da resposta esperada.
 
     O fluxo combina pre-processamento linguistico, similaridade TF-IDF e
     cobertura de palavras-chave para produzir uma nota de 0 a 100, um feedback
@@ -210,12 +210,12 @@ def avaliar_resposta(
     Raises:
         ValueError: Quando a resposta esperada e vazia ou a configuracao e
             inconsistente.
-    """
+    '''
     configuracao = configuracao or ConfiguracaoAvaliacao()
     _validar_configuracao(configuracao)
 
     if not resposta_esperada.strip():
-        raise ValueError("A resposta esperada nao pode ser vazia.")
+        raise ValueError('A resposta esperada nao pode ser vazia.')
 
     resposta_esperada_proc = preprocessar_texto(
         resposta_esperada,

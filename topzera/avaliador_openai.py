@@ -1,4 +1,4 @@
-"""Avaliador semantico de respostas usando Azure OpenAI."""
+'''Avaliador semantico de respostas usando Azure OpenAI.'''
 
 from __future__ import annotations
 
@@ -11,15 +11,12 @@ from urllib.parse import urlsplit, urlunsplit
 
 from dotenv import load_dotenv
 
-API_VERSION_PADRAO = "2024-12-01-preview"
-
-
 @dataclass(slots=True)
 class ConfiguracaoAzureOpenAI:
     api_key: str
     endpoint: str
     deployment: str
-    api_version: str = API_VERSION_PADRAO
+    api_version: str
     temperatura: float | None = None
 
 
@@ -38,7 +35,7 @@ class ResultadoAvaliacaoIA:
 
 
 def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
-    """Le configuracao do ambiente e monta o objeto de acesso ao Azure OpenAI.
+    '''Le configuracao do ambiente e monta o objeto de acesso ao Azure OpenAI.
 
     A funcao busca nomes alternativos de variavel para reduzir atrito entre
     ambientes, normaliza o endpoint e converte a temperatura para um tipo
@@ -51,31 +48,32 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
     Raises:
         RuntimeError: Quando faltam variaveis obrigatorias ou quando a
             temperatura configurada nao pode ser convertida para numero.
-    """
+    '''
     load_dotenv()
 
-    api_key = obter_env("AZURE_OPENAI_API_KEY", "OPENAI_API_KEY")
-    endpoint = normalizar_endpoint_azure(obter_env("AZURE_OPENAI_ENDPOINT", "AZURE_ENDPOINT"))
+    api_key = obter_env('AZURE_OPENAI_API_KEY', 'OPENAI_API_KEY')
+    endpoint = normalizar_endpoint_azure(obter_env('AZURE_OPENAI_ENDPOINT', 'AZURE_ENDPOINT'))
     deployment = obter_env(
-        "AZURE_OPENAI_DEPLOYMENT",
-        "AZURE_OPENAI_MODEL",
-        "AZURE_DEPLOYMENT",
-        "OPENAI_MODEL",
+        'AZURE_OPENAI_DEPLOYMENT',
+        'AZURE_OPENAI_MODEL',
+        'AZURE_DEPLOYMENT',
+        'OPENAI_MODEL',
+        'API_VERSION'
     )
-    api_version = obter_env_opcional("AZURE_OPENAI_API_VERSION", "OPENAI_API_VERSION") or API_VERSION_PADRAO
+    api_version = obter_env_opcional('AZURE_OPENAI_API_VERSION', 'OPENAI_API_VERSION','API_VERSION')
     temperatura = carregar_temperatura()
 
     ausentes = []
     if not api_key:
-        ausentes.append("AZURE_OPENAI_API_KEY ou OPENAI_API_KEY")
+        ausentes.append('AZURE_OPENAI_API_KEY ou OPENAI_API_KEY')
     if not endpoint:
-        ausentes.append("AZURE_OPENAI_ENDPOINT ou AZURE_ENDPOINT")
+        ausentes.append('AZURE_OPENAI_ENDPOINT ou AZURE_ENDPOINT')
     if not deployment:
-        ausentes.append("AZURE_OPENAI_DEPLOYMENT")
+        ausentes.append('AZURE_OPENAI_DEPLOYMENT')
 
     if ausentes:
         raise RuntimeError(
-            "Configuracao incompleta. Defina no .env: " + "; ".join(ausentes) + "."
+            'Configuracao incompleta. Defina no .env: ' + '; '.join(ausentes) + '.'
         )
 
     return ConfiguracaoAzureOpenAI(
@@ -88,7 +86,7 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
 
 
 def obter_env(*nomes: str) -> str:
-    """Retorna o primeiro valor de ambiente valido ou string vazia.
+    '''Retorna o primeiro valor de ambiente valido ou string vazia.
 
     Essa funcao simplifica chamadas em que o codigo prefere trabalhar sempre
     com ``str``, mesmo quando nenhuma variavel configurada foi encontrada.
@@ -99,13 +97,13 @@ def obter_env(*nomes: str) -> str:
     Returns:
         Primeiro valor nao vazio encontrado, ou string vazia caso todos os
         nomes consultados estejam ausentes.
-    """
+    '''
     valor = obter_env_opcional(*nomes)
-    return valor or ""
+    return valor or ''
 
 
 def obter_env_opcional(*nomes: str) -> str | None:
-    """Procura a primeira variavel de ambiente nao vazia entre varios nomes.
+    '''Procura a primeira variavel de ambiente nao vazia entre varios nomes.
 
     Args:
         *nomes: Lista ordenada de chaves que podem conter a configuracao.
@@ -113,7 +111,7 @@ def obter_env_opcional(*nomes: str) -> str | None:
     Returns:
         Valor limpo da primeira variavel encontrada, ou ``None`` quando nenhuma
         delas estiver definida com conteudo util.
-    """
+    '''
     for nome in nomes:
         valor = os.getenv(nome)
         if valor and valor.strip():
@@ -122,7 +120,7 @@ def obter_env_opcional(*nomes: str) -> str | None:
 
 
 def carregar_temperatura() -> float | None:
-    """Carrega a temperatura opcional do modelo a partir do ambiente.
+    '''Carrega a temperatura opcional do modelo a partir do ambiente.
 
     Returns:
         Valor em ponto flutuante quando a configuracao existe, ou ``None`` para
@@ -131,19 +129,19 @@ def carregar_temperatura() -> float | None:
     Raises:
         RuntimeError: Quando o valor informado nao pode ser interpretado como
             numero.
-    """
-    valor = os.getenv("AZURE_OPENAI_TEMPERATURE")
+    '''
+    valor = os.getenv('AZURE_OPENAI_TEMPERATURE')
     if not valor or not valor.strip():
         return None
 
     try:
         return float(valor)
     except ValueError as erro:
-        raise RuntimeError("AZURE_OPENAI_TEMPERATURE precisa ser um numero, exemplo: 1.") from erro
+        raise RuntimeError('AZURE_OPENAI_TEMPERATURE precisa ser um numero, exemplo: 1.') from erro
 
 
 def normalizar_endpoint_azure(endpoint: str) -> str:
-    """Normaliza o endpoint base do Azure OpenAI.
+    '''Normaliza o endpoint base do Azure OpenAI.
 
     Alguns usuarios informam URLs completas contendo sufixos como ``/openai`` ou
     rotas de deployment. Esta funcao remove esses trechos para preservar apenas
@@ -155,24 +153,24 @@ def normalizar_endpoint_azure(endpoint: str) -> str:
     Returns:
         Endpoint base limpo, terminado com ``/``. Retorna string vazia quando a
         entrada nao possui conteudo util.
-    """
+    '''
     endpoint = endpoint.strip()
     if not endpoint:
-        return ""
+        return ''
 
     partes = urlsplit(endpoint)
-    caminho = partes.path.rstrip("/")
-    indice_openai = caminho.lower().find("/openai")
+    caminho = partes.path.rstrip('/')
+    indice_openai = caminho.lower().find('/openai')
 
     if indice_openai >= 0:
         caminho = caminho[:indice_openai]
 
-    endpoint_limpo = urlunsplit((partes.scheme, partes.netloc, caminho, "", ""))
-    return endpoint_limpo.rstrip("/") + "/"
+    endpoint_limpo = urlunsplit((partes.scheme, partes.netloc, caminho, '', ''))
+    return endpoint_limpo.rstrip('/') + '/'
 
 
 def criar_cliente(configuracao: ConfiguracaoAzureOpenAI):
-    """Instancia o cliente do Azure OpenAI sob demanda.
+    '''Instancia o cliente do Azure OpenAI sob demanda.
 
     O import tardio evita falha de importacao em cenarios onde o usuario apenas
     deseja validar configuracao ou inspecionar o codigo sem ter a dependencia
@@ -188,13 +186,13 @@ def criar_cliente(configuracao: ConfiguracaoAzureOpenAI):
     Raises:
         RuntimeError: Quando a biblioteca ``openai`` nao esta instalada no
             ambiente virtual do projeto.
-    """
+    '''
     try:
         from openai import AzureOpenAI
     except ModuleNotFoundError as erro:
         raise RuntimeError(
-            "Biblioteca openai nao instalada. Execute: "
-            "venv\\Scripts\\python -m pip install -r requirements.txt"
+            'Biblioteca openai nao instalada. Execute: '
+            'venv\\Scripts\\python -m pip install -r requirements.txt'
         ) from erro
 
     return AzureOpenAI(
@@ -210,7 +208,7 @@ def avaliar_resposta_com_ia(
     resposta_usuario: str,
     configuracao: ConfiguracaoAzureOpenAI | None = None,
 ) -> ResultadoAvaliacaoIA:
-    """Avalia semanticamente a resposta do usuario via Azure OpenAI.
+    '''Avalia semanticamente a resposta do usuario via Azure OpenAI.
 
     O metodo valida entradas obrigatorias, monta a chamada para o modelo com um
     schema JSON restrito e depois sanitiza a resposta para uma estrutura tipada.
@@ -232,29 +230,29 @@ def avaliar_resposta_com_ia(
         ValueError: Quando pergunta ou respostas obrigatorias sao vazias.
         RuntimeError: Quando a configuracao ou a dependencia da API sao
             insuficientes para executar a chamada.
-    """
+    '''
     if not pergunta.strip():
-        raise ValueError("A pergunta nao pode ser vazia.")
+        raise ValueError('A pergunta nao pode ser vazia.')
     if not resposta_esperada.strip():
-        raise ValueError("A resposta esperada nao pode ser vazia.")
+        raise ValueError('A resposta esperada nao pode ser vazia.')
     if not resposta_usuario.strip():
-        raise ValueError("A resposta do usuario nao pode ser vazia.")
+        raise ValueError('A resposta do usuario nao pode ser vazia.')
 
     configuracao = configuracao or carregar_configuracao()
     cliente = criar_cliente(configuracao)
 
     parametros = {
-        "model": configuracao.deployment,
-        "response_format": {"type": "json_object"},
-        "messages": montar_mensagens(pergunta, resposta_esperada, resposta_usuario),
+        'model': configuracao.deployment,
+        'response_format': {'type': 'json_object'},
+        'messages': montar_mensagens(pergunta, resposta_esperada, resposta_usuario),
     }
 
     if configuracao.temperatura is not None:
-        parametros["temperature"] = configuracao.temperatura
+        parametros['temperature'] = configuracao.temperatura
 
     resposta = cliente.chat.completions.create(**parametros)
 
-    conteudo = resposta.choices[0].message.content or "{}"
+    conteudo = resposta.choices[0].message.content or '{}'
     dados = carregar_resultado_json(conteudo)
     return montar_resultado(
         pergunta=pergunta,
@@ -269,7 +267,7 @@ def montar_mensagens(
     resposta_esperada: str,
     resposta_usuario: str,
 ) -> list[dict[str, str]]:
-    """Constroi as mensagens enviadas ao modelo de linguagem.
+    '''Constroi as mensagens enviadas ao modelo de linguagem.
 
     O prompt de sistema restringe o comportamento esperado do avaliador e o
     formato de saida. A mensagem de usuario injeta o contexto especifico do
@@ -282,8 +280,8 @@ def montar_mensagens(
 
     Returns:
         Lista de mensagens no formato aceito pela API de chat completions.
-    """
-    instrucao_sistema = """
+    '''
+    instrucao_sistema = '''
 Voce e um avaliador de respostas educacionais.
 Compare a resposta do aluno com a resposta esperada.
 
@@ -296,17 +294,17 @@ Regras:
 
 Schema do JSON:
 {
-  "nota": 0,
-  "feedback": "Parcial",
-  "similaridade_semantica": 0.0,
-  "justificativa": "texto curto",
-  "pontos_corretos": ["texto curto"],
-  "lacunas": ["texto curto"],
-  "alertas": ["texto curto"]
+  'nota': 0,
+  'feedback': 'Parcial',
+  'similaridade_semantica': 0.0,
+  'justificativa': 'texto curto',
+  'pontos_corretos': ['texto curto'],
+  'lacunas': ['texto curto'],
+  'alertas': ['texto curto']
 }
-""".strip()
+'''.strip()
 
-    tarefa_usuario = f"""
+    tarefa_usuario = f'''
 Pergunta:
 {pergunta}
 
@@ -319,11 +317,11 @@ Resposta do usuario:
 Avalie a resposta do usuario.
 Use nota de 0 a 100.
 Use similaridade_semantica de 0.0 a 1.0.
-""".strip()
+'''.strip()
 
     return [
-        {"role": "system", "content": instrucao_sistema},
-        {"role": "user", "content": tarefa_usuario},
+        {'role': 'system', 'content': instrucao_sistema},
+        {'role': 'user', 'content': tarefa_usuario},
     ]
 
 
@@ -333,7 +331,7 @@ def montar_resultado(
     resposta_usuario: str,
     dados: dict[str, Any],
 ) -> ResultadoAvaliacaoIA:
-    """Converte o JSON do modelo em uma estrutura tipada e segura.
+    '''Converte o JSON do modelo em uma estrutura tipada e segura.
 
     A funcao aplica normalizacao defensiva em campos numericos e textuais para
     reduzir impacto de respostas parcialmente fora do schema esperado.
@@ -346,10 +344,10 @@ def montar_resultado(
 
     Returns:
         Resultado final pronto para consumo pela CLI ou por futuras integracoes.
-    """
-    nota = limitar_float(dados.get("nota", 0), minimo=0.0, maximo=100.0)
-    similaridade = limitar_float(dados.get("similaridade_semantica", nota / 100), minimo=0.0, maximo=1.0)
-    feedback = normalizar_feedback(str(dados.get("feedback", "")), nota)
+    '''
+    nota = limitar_float(dados.get('nota', 0), minimo=0.0, maximo=100.0)
+    similaridade = limitar_float(dados.get('similaridade_semantica', nota / 100), minimo=0.0, maximo=1.0)
+    feedback = normalizar_feedback(str(dados.get('feedback', '')), nota)
 
     return ResultadoAvaliacaoIA(
         pergunta=pergunta,
@@ -358,15 +356,15 @@ def montar_resultado(
         nota=nota,
         feedback=feedback,
         similaridade_semantica=similaridade,
-        justificativa=str(dados.get("justificativa", "")).strip(),
-        pontos_corretos=normalizar_lista(dados.get("pontos_corretos")),
-        lacunas=normalizar_lista(dados.get("lacunas")),
-        alertas=normalizar_lista(dados.get("alertas")),
+        justificativa=str(dados.get('justificativa', '')).strip(),
+        pontos_corretos=normalizar_lista(dados.get('pontos_corretos')),
+        lacunas=normalizar_lista(dados.get('lacunas')),
+        alertas=normalizar_lista(dados.get('alertas')),
     )
 
 
 def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
-    """Converte o conteudo textual do modelo em um dicionario JSON valido.
+    '''Converte o conteudo textual do modelo em um dicionario JSON valido.
 
     Args:
         conteudo: Texto bruto retornado pelo modelo.
@@ -377,19 +375,19 @@ def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
     Raises:
         ValueError: Quando o modelo nao retorna JSON valido ou devolve um tipo
             diferente de objeto.
-    """
+    '''
     try:
         dados = json.loads(conteudo)
     except JSONDecodeError as erro:
-        raise ValueError("O modelo nao retornou um JSON valido.") from erro
+        raise ValueError('O modelo nao retornou um JSON valido.') from erro
 
     if not isinstance(dados, dict):
-        raise ValueError("O JSON retornado pelo modelo precisa ser um objeto.")
+        raise ValueError('O JSON retornado pelo modelo precisa ser um objeto.')
     return dados
 
 
 def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
-    """Converte um valor para ``float`` e restringe ao intervalo permitido.
+    '''Converte um valor para ``float`` e restringe ao intervalo permitido.
 
     Args:
         valor: Valor bruto retornado pela API ou por outra etapa do pipeline.
@@ -399,7 +397,7 @@ def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
     Returns:
         Numero convertido e ajustado para permanecer entre ``minimo`` e
         ``maximo``. Quando a conversao falha, usa o limite inferior.
-    """
+    '''
     try:
         numero = float(valor)
     except (TypeError, ValueError):
@@ -408,7 +406,7 @@ def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
 
 
 def normalizar_feedback(feedback_modelo: str, nota: float) -> str:
-    """Padroniza o feedback textual em uma taxonomia fixa do projeto.
+    '''Padroniza o feedback textual em uma taxonomia fixa do projeto.
 
     A normalizacao tolera variacoes comuns de rotulo produzidas pelo modelo e,
     quando necessario, cai para uma inferencia baseada na nota numerica.
@@ -420,22 +418,22 @@ def normalizar_feedback(feedback_modelo: str, nota: float) -> str:
     Returns:
         Um dos tres rotulos oficiais: ``Entendeu``, ``Parcial`` ou
         ``Nao entendeu``.
-    """
+    '''
     feedback_limpo = feedback_modelo.strip().lower()
-    if feedback_limpo in {"entendeu", "entende", "correto"}:
-        return "Entendeu"
-    if feedback_limpo in {"parcial", "entendeu parcialmente", "meio certo"}:
-        return "Parcial"
-    if feedback_limpo in {"nao entendeu", "não entendeu", "errado", "incorreto"}:
-        return "Nao entendeu"
+    if feedback_limpo in {'entendeu', 'entende', 'correto'}:
+        return 'Entendeu'
+    if feedback_limpo in {'parcial', 'entendeu parcialmente', 'meio certo'}:
+        return 'Parcial'
+    if feedback_limpo in {'nao entendeu', 'não entendeu', 'errado', 'incorreto'}:
+        return 'Nao entendeu'
 
     if nota >= 70:
-        return "Entendeu"
-    return "Parcial" if nota >= 30 else "Nao entendeu"
+        return 'Entendeu'
+    return 'Parcial' if nota >= 30 else 'Nao entendeu'
 
 
 def normalizar_lista(valor: Any) -> list[str]:
-    """Converte um campo potencialmente heterogeneo em lista limpa de strings.
+    '''Converte um campo potencialmente heterogeneo em lista limpa de strings.
 
     Args:
         valor: Valor bruto retornado pela API para campos como pontos corretos,
@@ -444,7 +442,7 @@ def normalizar_lista(valor: Any) -> list[str]:
     Returns:
         Lista contendo apenas itens nao vazios, convertidos para string.
         Retorna lista vazia quando a entrada nao e uma lista valida.
-    """
+    '''
     if not isinstance(valor, list):
         return []
     return [str(item).strip() for item in valor if str(item).strip()]
