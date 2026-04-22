@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-import argparse
+import argparse # Biblioteca padrao para parsing de argumentos de linha de comando, usada para definir e interpretar as flags que a CLI aceita.
 import sys
 
 from avaliador_openai import ResultadoAvaliacaoIA, avaliar_resposta_com_ia, carregar_configuracao

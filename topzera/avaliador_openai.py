@@ -13,6 +13,16 @@ from dotenv import load_dotenv
 
 @dataclass(slots=True)
 class ConfiguracaoAzureOpenAI:
+    '''Estrutura de configuração para acesso ao Azure OpenAI.
+    Esta classe concentra as variaveis de ambiente e parametros necessarios para acessar a API do Azure OpenAI. O uso de ``@dataclass`` com ``slots=True`` otimiza a memoria e o desempenho, tornando a classe mais leve e rápida, o que é benéfico para um componente que pode ser instanciado várias vezes durante a execução do programa.
+    Os campos principais incluem:
+    - ``api_key``: Chave de autenticação para acessar a API do Azure OpenAI.
+    - ``endpoint``: URL base do serviço Azure OpenAI, normalizada para evitar erros de configuração.
+    - ``deployment``: Nome do deployment ou modelo a ser utilizado nas chamadas.
+    - ``api_version``: Versão da API do Azure OpenAI, que pode ser opcional dependendo do ambiente.
+    - ``temperatura``: Parâmetro obrigatório que define o comportamento do modelo, influenciando a criatividade das respostas geradas.
+    '''
+    
     api_key: str
     endpoint: str
     deployment: str
@@ -22,6 +32,20 @@ class ConfiguracaoAzureOpenAI:
 
 @dataclass(slots=True)
 class ResultadoAvaliacaoIA:
+    '''Estrutura de resultado da avaliação semântica realizada pela IA.
+    Esta classe representa o resultado consolidado da avaliação feita pelo Azure OpenAI. O uso de ``@dataclass`` com ``slots=True`` otimiza a memória e o desempenho, tornando a classe mais leve e rápida, o que é benéfico para um componente que pode ser criado e utilizado várias vezes durante a execução do programa.
+    Os campos principais incluem:
+    - ``pergunta``: Enunciado da questão ou atividade avaliada.
+    - ``resposta_esperada``: Resposta de referência usada como critério de comparação.
+    - ``resposta_usuario``: Resposta submetida pelo usuário para avaliação.
+    - ``nota``: Nota numérica atribuída à resposta do usuário, geralmente entre 0 e 100.
+    - ``feedback``: Feedback textual categorizado, como "Entendeu", "Parcial" ou "Não entendeu".
+    - ``similaridade_semantica``: Medida numérica da similaridade entre a resposta do usuário e a resposta esperada, geralmente entre 0.0 e 1.0.
+    - ``justificativa``: Explicação complementar fornecida pela IA para justificar a nota e o feedback.
+    - ``pontos_corretos``: Lista de aspectos corretos identificados na resposta do usuário.
+    - ``lacunas``: Lista de aspectos ausentes ou incompletos na resposta do usuário.
+    - ``alertas``: Lista de problemas ou erros graves encontrados na resposta do usuário.
+    '''
     pergunta: str
     resposta_esperada: str
     resposta_usuario: str
