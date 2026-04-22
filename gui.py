@@ -96,12 +96,12 @@ def carregar_exemplos() -> list[dict[str, str]]:
 def formatar_feedback(feedback: str) -> str:
     '''Padroniza o feedback para uma forma mais amigavel na interface.'''
     mapa = {
-        'Nao entendeu': 'Nao entendeu',
-        'Não entendeu': 'Nao entendeu',
+        'Nao entendeu': 'Não entendeu',
+        'Não entendeu': 'Não entendeu',
         'Parcial': 'Parcial',
         'Entendeu': 'Entendeu',
     }
-    return mapa.get(feedback, feedback.strip() or 'Sem classificacao')
+    return mapa.get(feedback, feedback.strip() or 'Sem classificação')
 
 
 def cor_por_nota(nota: float) -> str:
@@ -143,15 +143,15 @@ class DidItUnderstandGUI(tk.Tk):
         self.aplicar_stemming_var = tk.BooleanVar(value=True)
         self.mostrar_detalhes_var = tk.BooleanVar(value=True)
         self.exemplo_info_var = tk.StringVar(
-            value='Nenhum exemplo carregado. Se quiser, voce pode criar uma pergunta nova do zero.'
+            value='Nenhum exemplo carregado. Se quiser, você pode criar uma pergunta nova do zero.'
         )
         self.status_var = tk.StringVar(
-            value='Monte uma pergunta, defina o gabarito e escolha como deseja corrigir a resposta do usuario.'
+            value='Monte uma pergunta, defina o gabarito e escolha como deseja corrigir a resposta do usuário.'
         )
         self.descricao_modo_var = tk.StringVar()
-        self.resumo_var = tk.StringVar(value='O resultado vai aparecer aqui com nota, leitura tecnica e indicadores.')
+        self.resumo_var = tk.StringVar(value='O resultado vai aparecer aqui com nota, leitura técnica e indicadores.')
         self.feedback_var = tk.StringVar(value='Pronto para corrigir')
-        self.azure_status_var = tk.StringVar(value='Ainda nao validado.')
+        self.azure_status_var = tk.StringVar(value='Ainda não validado.')
 
         self.metricas_titulos: list[tk.StringVar] = []
         self.metricas_valores: list[tk.StringVar] = []
@@ -315,7 +315,7 @@ class DidItUnderstandGUI(tk.Tk):
         tk.Label(
             texto_frame,
             text=(
-                'Crie perguntas novas manualmente ou carregue um exemplo pronto quando quiser demonstrar o sistema mais rapido.'
+                'Crie perguntas novas manualmente ou carregue um exemplo pronto quando quiser demonstrar o sistema mais rápido.'
             ),
             bg=CORES['fundo'],
             fg=CORES['texto_suave'],
@@ -357,7 +357,7 @@ class DidItUnderstandGUI(tk.Tk):
 
         tk.Label(
             card,
-            text='Criar nova avaliacao',
+            text='Criar nova avaliação',
             bg=CORES['cartao'],
             fg=CORES['texto'],
             font=FONTES['secao'],
@@ -366,8 +366,8 @@ class DidItUnderstandGUI(tk.Tk):
         tk.Label(
             card,
             text=(
-                'O uso principal desta tela e escrever uma pergunta nova, definir o gabarito e corrigir a resposta do usuario. '
-                'Os exemplos servem apenas como atalho de demonstracao.'
+                'O uso principal desta tela é escrever uma pergunta nova, definir o gabarito e corrigir a resposta do usuário. '
+                'Os exemplos servem apenas como atalho de demonstração.'
             ),
             bg=CORES['cartao'],
             fg=CORES['texto_suave'],
@@ -379,7 +379,7 @@ class DidItUnderstandGUI(tk.Tk):
         frame_pergunta, self.texto_pergunta = self._criar_campo_entrada(
             card,
             titulo='Pergunta',
-            dica='Escreva aqui uma nova pergunta. Nao precisa vir dos exemplos.',
+            dica='Escreva aqui uma nova pergunta. Não precisa vir dos exemplos.',
         )
         frame_pergunta.grid(row=2, column=0, sticky='nsew', pady=(20, 0))
 
@@ -392,8 +392,8 @@ class DidItUnderstandGUI(tk.Tk):
 
         frame_usuario, self.texto_usuario = self._criar_campo_entrada(
             card,
-            titulo='Resposta do usuario',
-            dica='Cole aqui a resposta que sera corrigida com base na pergunta e no gabarito.',
+            titulo='Resposta do usuário',
+            dica='Cole aqui a resposta que será corrigida com base na pergunta e no gabarito.',
         )
         frame_usuario.grid(row=4, column=0, sticky='nsew', pady=(18, 0))
 
@@ -403,7 +403,7 @@ class DidItUnderstandGUI(tk.Tk):
 
         tk.Label(
             card_exemplos,
-            text='Exemplos prontos, opcional',
+            text='Exemplos prontos, opcionais',
             bg=CORES['cartao'],
             fg=CORES['texto'],
             font=FONTES['secao'],
@@ -412,8 +412,8 @@ class DidItUnderstandGUI(tk.Tk):
         tk.Label(
             card_exemplos,
             text=(
-                'Se quiser demonstrar rapido, carregue um caso pronto. '
-                'Se nao, ignore este bloco e crie sua pergunta normalmente.'
+                'Se quiser demonstrar rapidamente, carregue um caso pronto. '
+                'Se não, ignore este bloco e crie sua pergunta normalmente.'
             ),
             bg=CORES['cartao'],
             fg=CORES['texto_suave'],
@@ -457,7 +457,7 @@ class DidItUnderstandGUI(tk.Tk):
 
         tk.Label(
             self.card_opcoes,
-            text='Aqui voce decide se a correcao sera mais textual ou mais semantica.',
+            text='Aqui você decide se a correção será mais textual ou mais semântica.',
             bg=CORES['cartao'],
             fg=CORES['texto_suave'],
             font=FONTES['subtitulo'],
@@ -474,7 +474,7 @@ class DidItUnderstandGUI(tk.Tk):
         self.botao_mais_ou_menos = self._criar_botao_modo(
             modos,
             titulo='Mais ou Menos',
-            descricao='Corrige por proximidade textual\nRapido, explicavel e barato',
+            descricao='Corrige por proximidade textual\nRápido, explicável e barato',
             comando=lambda: self._selecionar_modo('mais_ou_menos'),
         )
         self.botao_mais_ou_menos.grid(row=0, column=0, sticky='nsew', padx=(0, 8))
@@ -482,7 +482,7 @@ class DidItUnderstandGUI(tk.Tk):
         self.botao_topzera = self._criar_botao_modo(
             modos,
             titulo='Topzera',
-            descricao='Corrige por significado\nMelhor para parafrases e nuance',
+            descricao='Corrige por significado\nMelhor para paráfrases e nuances',
             comando=lambda: self._selecionar_modo('topzera'),
         )
         self.botao_topzera.grid(row=0, column=1, sticky='nsew', padx=(8, 0))
@@ -509,14 +509,14 @@ class DidItUnderstandGUI(tk.Tk):
 
         self.check_stemming = self._criar_check(
             self.opcoes_local_frame,
-            texto='Aplicar stemming para aproximar flexoes e variacoes de palavras',
+            texto='Aplicar stemming para aproximar flexões e variações de palavras',
             variavel=self.aplicar_stemming_var,
         )
         self.check_stemming.grid(row=1, column=0, sticky='w', pady=(8, 0))
 
         self.check_detalhes = self._criar_check(
             self.opcoes_local_frame,
-            texto='Mostrar tokens e radicais no painel tecnico',
+            texto='Mostrar tokens e radicais no painel técnico',
             variavel=self.mostrar_detalhes_var,
         )
         self.check_detalhes.grid(row=2, column=0, sticky='w', pady=(8, 0))
@@ -527,7 +527,7 @@ class DidItUnderstandGUI(tk.Tk):
         tk.Label(
             self.opcoes_ia_frame,
             text=(
-                'Esse modo usa Azure OpenAI, entao depende de .env valido, internet '
+                'Esse modo usa Azure OpenAI, então depende de um .env válido, de internet '
                 'e pode gerar custo por chamada.'
             ),
             bg=CORES['cartao'],
@@ -604,7 +604,7 @@ class DidItUnderstandGUI(tk.Tk):
 
         tk.Label(
             topo,
-            text='Correcao da resposta',
+            text='Correção da resposta',
             bg=CORES['cartao'],
             fg=CORES['texto'],
             font=FONTES['secao'],
@@ -612,7 +612,7 @@ class DidItUnderstandGUI(tk.Tk):
 
         tk.Label(
             topo,
-            text='Depois de montar a pergunta e o gabarito, o painel abaixo mostra a nota e o por que da correcao.',
+            text='Depois de montar a pergunta e o gabarito, o painel abaixo mostra a nota e o porquê da correção.',
             bg=CORES['cartao'],
             fg=CORES['texto_suave'],
             font=FONTES['subtitulo'],
@@ -677,7 +677,7 @@ class DidItUnderstandGUI(tk.Tk):
 
         tk.Label(
             card,
-            text='Leitura tecnica',
+            text='Leitura técnica',
             bg=CORES['cartao'],
             fg=CORES['texto'],
             font=FONTES['secao'],
@@ -960,8 +960,8 @@ class DidItUnderstandGUI(tk.Tk):
         modo = self.modo_var.get()
         if modo == 'mais_ou_menos':
             self.descricao_modo_var.set(
-                'Use este modo quando voce quer corrigir com criterios transparentes. '
-                'Ele mostra a proximidade textual, as palavras-chave cobertas e o efeito do pre-processamento.'
+                'Use este modo quando você quer corrigir com critérios transparentes. '
+                'Ele mostra a proximidade textual, as palavras-chave cobertas e o efeito do pré-processamento.'
             )
             self.botao_avaliar.configure(text='Corrigir com Mais ou Menos', bg=CORES['navy'])
             self.botao_mais_ou_menos.configure(
@@ -980,7 +980,7 @@ class DidItUnderstandGUI(tk.Tk):
             self.opcoes_local_frame.grid(row=4, column=0, sticky='ew', pady=(10, 0))
         else:
             self.descricao_modo_var.set(
-                'Use este modo quando a resposta do usuario pode vir com palavras bem diferentes do gabarito. '
+                'Use este modo quando a resposta do usuário pode vir com palavras bem diferentes do gabarito. '
                 'Ele corrige pelo significado, mas depende de Azure OpenAI, conectividade e controle de custo.'
             )
             self.botao_avaliar.configure(text='Corrigir com Topzera', bg=CORES['coral'])
@@ -1003,12 +1003,12 @@ class DidItUnderstandGUI(tk.Tk):
         '''Exibe um estado neutro antes da primeira avaliacao.'''
         self.feedback_var.set('Pronto para corrigir')
         self.resumo_var.set(
-            'Crie uma pergunta nova ou carregue um exemplo pronto, depois escolha o tipo de correcao e acompanhe a nota aqui.'
+            'Crie uma pergunta nova ou carregue um exemplo pronto, depois escolha o tipo de correção e acompanhe a nota aqui.'
         )
         self._atualizar_metricas(
             [
                 ('Etapa atual', 'Criar pergunta'),
-                ('Modo padrao', 'Mais ou Menos'),
+                ('Modo padrão', 'Mais ou Menos'),
                 ('Exemplos', 'Opcionais'),
             ]
         )
@@ -1017,12 +1017,12 @@ class DidItUnderstandGUI(tk.Tk):
                 [
                     'A interface foi organizada para espelhar o fluxo real de uso do projeto.',
                     '',
-                    '- O caminho principal e criar uma pergunta nova e registrar a resposta esperada.',
-                    '- Depois cola a resposta do usuario para ser corrigida.',
-                    '- Os exemplos prontos existem apenas para acelerar testes e demonstracoes.',
-                    '- Por fim voce escolhe se quer uma correcao textual, no Mais ou Menos, ou uma correcao semantica, no Topzera.',
+                    '- O caminho principal é criar uma pergunta nova e registrar a resposta esperada.',
+                    '- Depois, cole a resposta do usuário para ser corrigida.',
+                    '- Os exemplos prontos existem apenas para acelerar testes e demonstrações.',
+                    '- Por fim, você escolhe se quer uma correção textual, no Mais ou Menos, ou uma correção semântica, no Topzera.',
                     '',
-                    'O objetivo da GUI e deixar a construcao da avaliacao e a leitura do resultado mais naturais.',
+                    'O objetivo da GUI é deixar a construção da avaliação e a leitura do resultado mais naturais.',
                 ]
             )
         )
@@ -1042,7 +1042,7 @@ class DidItUnderstandGUI(tk.Tk):
         self._definir_texto(self.texto_esperada, exemplo.get('resposta_esperada', ''))
         self._definir_texto(self.texto_usuario, exemplo.get('resposta_usuario', ''))
         self.exemplo_info_var.set(
-            f'Ultimo exemplo carregado: {exemplo.get('nome', 'Exemplo sem nome')}. Clique de novo para trocar.'
+            f"Último exemplo carregado: {exemplo.get('nome', 'Exemplo sem nome')}. Clique de novo para trocar."
         )
         self.status_var.set(
             'Exemplo pronto carregado. Se quiser criar uma pergunta nova, basta editar os campos livremente.'
@@ -1056,9 +1056,9 @@ class DidItUnderstandGUI(tk.Tk):
             self._definir_texto(widget, '')
         self.indice_exemplo_atual = -1
         self.exemplo_info_var.set(
-            'Campos limpos. Agora voce pode escrever uma pergunta nova sem depender dos exemplos.'
+            'Campos limpos. Agora você pode escrever uma pergunta nova sem depender dos exemplos.'
         )
-        self.status_var.set('Campos limpos. Pronto para montar uma nova avaliacao.')
+        self.status_var.set('Campos limpos. Pronto para montar uma nova avaliação.')
 
     def _iniciar_avaliacao(self) -> None:
         '''Valida os dados e dispara a avaliacao sem travar a interface.'''
@@ -1072,10 +1072,10 @@ class DidItUnderstandGUI(tk.Tk):
 
         erro = self._validar_entradas(modo, pergunta, resposta_esperada, resposta_usuario)
         if erro:
-            messagebox.showerror('Campos obrigatorios', erro)
+            messagebox.showerror('Campos obrigatórios', erro)
             return
 
-        self._alterar_estado_execucao(True, 'Executando avaliacao. Aguarde um instante...')
+        self._alterar_estado_execucao(True, 'Executando avaliação. Aguarde um instante...')
         thread = threading.Thread(
             target=self._executar_avaliacao_em_thread,
             args=(modo, pergunta, resposta_esperada, resposta_usuario),
@@ -1092,11 +1092,11 @@ class DidItUnderstandGUI(tk.Tk):
     ) -> str | None:
         '''Valida as entradas minimas para evitar erros triviais de uso.'''
         if not pergunta.strip():
-            return 'A pergunta precisa ser informada para montar a avaliacao.'
+            return 'A pergunta precisa ser informada para montar a avaliação.'
         if not resposta_esperada.strip():
-            return 'A resposta esperada e obrigatoria, porque ela funciona como gabarito da correcao.'
+            return 'A resposta esperada é obrigatória, porque ela funciona como gabarito da correção.'
         if modo == 'topzera' and not resposta_usuario.strip():
-            return 'No Topzera a resposta do usuario nao pode ficar vazia.'
+            return 'No Topzera, a resposta do usuário não pode ficar vazia.'
         return None
 
     def _executar_avaliacao_em_thread(
@@ -1144,7 +1144,7 @@ class DidItUnderstandGUI(tk.Tk):
             f'- Similaridade TF-IDF: {resultado.similaridade:.2%}',
             f'- Cobertura de palavras-chave: {resultado.cobertura_palavras_chave:.2%}',
             '',
-            'Observacoes do motor',
+            'Observações do motor',
         ]
         linhas.extend(
             f'- {observacao}' for observacao in resultado.observacoes
@@ -1153,8 +1153,8 @@ class DidItUnderstandGUI(tk.Tk):
             [
                 '',
                 'Palavras-chave',
-                f'- Esperadas: {', '.join(resultado.palavras_chave_esperadas) or 'nenhuma'}',
-                f'- Encontradas: {', '.join(resultado.palavras_chave_encontradas) or 'nenhuma'}',
+                f"- Esperadas: {', '.join(resultado.palavras_chave_esperadas) or 'nenhuma'}",
+                f"- Encontradas: {', '.join(resultado.palavras_chave_encontradas) or 'nenhuma'}",
             ]
         )
 
@@ -1162,13 +1162,13 @@ class DidItUnderstandGUI(tk.Tk):
             linhas.extend(
                 [
                     '',
-                    'Camada tecnica',
+                    'Camada técnica',
                     (
                         '- Tokens da resposta esperada: '
                         + (' '.join(resultado.resposta_esperada_processada.tokens) or 'nenhum')
                     ),
                     (
-                        '- Tokens da resposta do usuario: '
+                        '- Tokens da resposta do usuário: '
                         + (' '.join(resultado.resposta_usuario_processada.tokens) or 'nenhum')
                     ),
                     (
@@ -1176,7 +1176,7 @@ class DidItUnderstandGUI(tk.Tk):
                         + (resultado.resposta_esperada_processada.texto_processado or 'nenhum')
                     ),
                     (
-                        '- Radicais do usuario: '
+                        '- Radicais do usuário: '
                         + (resultado.resposta_usuario_processada.texto_processado or 'nenhum')
                     ),
                 ]
@@ -1185,7 +1185,7 @@ class DidItUnderstandGUI(tk.Tk):
         resumo = (
             resultado.observacoes[0]
             if resultado.observacoes
-            else 'A nota foi calculada com base na combinacao entre proximidade textual e palavras-chave.'
+            else 'A nota foi calculada com base na combinação entre proximidade textual e palavras-chave.'
         )
         metricas = [
             ('Similaridade TF-IDF', f'{resultado.similaridade:.2%}'),
@@ -1223,11 +1223,11 @@ class DidItUnderstandGUI(tk.Tk):
             'Leitura principal',
             f'- Feedback: {formatar_feedback(resultado.feedback)}',
             f'- Nota final: {resultado.nota:.2f}/100',
-            f'- Similaridade semantica: {resultado.similaridade_semantica:.2%}',
+            f'- Similaridade semântica: {resultado.similaridade_semantica:.2%}',
             f'- Deployment usado: {configuracao.deployment}',
             '',
             'Justificativa da IA',
-            f'- {resultado.justificativa or 'A IA nao retornou justificativa textual.'}',
+            f"- {resultado.justificativa or 'A IA não retornou justificativa textual.'}",
             '',
         ]
 
@@ -1257,10 +1257,10 @@ class DidItUnderstandGUI(tk.Tk):
 
         resumo = (
             resultado.justificativa
-            or 'A IA comparou o significado das duas respostas e sintetizou a proximidade semantica.'
+            or 'A IA comparou o significado das duas respostas e sintetizou a proximidade semântica.'
         )
         metricas = [
-            ('Similaridade semantica', f'{resultado.similaridade_semantica:.2%}'),
+            ('Similaridade semântica', f'{resultado.similaridade_semantica:.2%}'),
             ('Pontos corretos', str(len(resultado.pontos_corretos))),
             ('Lacunas e alertas', str(len(resultado.lacunas) + len(resultado.alertas))),
         ]
@@ -1275,7 +1275,7 @@ class DidItUnderstandGUI(tk.Tk):
 
     def _renderizar_resultado(self, resultado: ResultadoTela) -> None:
         '''Atualiza todo o painel da direita com um novo resultado.'''
-        self._alterar_estado_execucao(False, f'{resultado.modo} concluiu a avaliacao com sucesso.')
+        self._alterar_estado_execucao(False, f'{resultado.modo} concluiu a avaliação com sucesso.')
         self.feedback_var.set(f'{resultado.modo}: {resultado.feedback}')
         self.resumo_var.set(resultado.resumo)
         self.label_feedback.configure(bg=cor_por_nota(resultado.nota))
@@ -1285,30 +1285,30 @@ class DidItUnderstandGUI(tk.Tk):
 
     def _mostrar_erro(self, mensagem: str) -> None:
         '''Exibe falhas operacionais de forma clara para o usuario.'''
-        self._alterar_estado_execucao(False, 'A avaliacao falhou. Revise a mensagem e tente novamente.')
+        self._alterar_estado_execucao(False, 'A avaliação falhou. Revise a mensagem e tente novamente.')
         detalhe = mensagem.strip() or 'Erro inesperado.'
         self.feedback_var.set('Falha operacional')
         self.resumo_var.set(
-            'Nao foi possivel concluir a avaliacao. O painel tecnico abaixo mostra a causa reportada pelo motor.'
+            'Não foi possível concluir a avaliação. O painel técnico abaixo mostra a causa reportada pelo motor.'
         )
         self.label_feedback.configure(bg=CORES['coral'])
         self._atualizar_metricas(
             [
                 ('Status', 'Erro'),
                 ('Modo ativo', 'Topzera' if self.modo_var.get() == 'topzera' else 'Mais ou Menos'),
-                ('Acao sugerida', 'Revisar configuracao'),
+                ('Ação sugerida', 'Revisar configuração'),
             ]
         )
         self._atualizar_detalhes(f'Falha reportada\n- {detalhe}')
         self._animar_nota(0.0)
-        messagebox.showerror('Falha na avaliacao', detalhe)
+        messagebox.showerror('Falha na avaliação', detalhe)
 
     def _verificar_configuracao_azure(self) -> None:
         '''Valida a configuracao do Azure em segundo plano.'''
         if self.operacao_em_execucao:
             return
 
-        self._alterar_estado_execucao(True, 'Validando configuracao do Azure OpenAI...')
+        self._alterar_estado_execucao(True, 'Validando configuração do Azure OpenAI...')
         thread = threading.Thread(target=self._executar_check_azure_em_thread, daemon=True)
         thread.start()
 
@@ -1322,14 +1322,14 @@ class DidItUnderstandGUI(tk.Tk):
             return
 
         mensagem = (
-            f'Configuracao valida. Deployment: {configuracao.deployment}. '
-            f'API version: {configuracao.api_version}. Endpoint: {configuracao.endpoint}'
+            f'Configuração válida. Deployment: {configuracao.deployment}. '
+            f'Versão da API: {configuracao.api_version}. Endpoint: {configuracao.endpoint}'
         )
         self.after(0, lambda: self._finalizar_check_azure(True, mensagem))
 
     def _finalizar_check_azure(self, sucesso: bool, mensagem: str) -> None:
         '''Atualiza a UI apos a verificacao de credenciais do Azure.'''
-        self._alterar_estado_execucao(False, 'Check de configuracao finalizado.')
+        self._alterar_estado_execucao(False, 'Verificação de configuração finalizada.')
         self.azure_status_var.set(mensagem)
         if sucesso:
             messagebox.showinfo('Azure OpenAI', mensagem)
@@ -1413,7 +1413,7 @@ class DidItUnderstandGUI(tk.Tk):
         canvas.create_text(
             88,
             116,
-            text='Aderencia ao gabarito',
+            text='Aderência ao gabarito',
             fill=CORES['texto_suave'],
             font=FONTES['subtitulo'],
             width=120,
@@ -1436,14 +1436,14 @@ class DidItUnderstandGUI(tk.Tk):
         canvas.create_text(
             (barra_x0 + barra_x1) / 2,
             122,
-            text=f'{nota:.1f}% de aderencia estimada',
+            text=f'{nota:.1f}% de aderência estimada',
             fill=CORES['texto'],
             font=FONTES['corpo_negrito'],
         )
         canvas.create_text(
             (barra_x0 + barra_x1) / 2,
             146,
-            text='Quanto maior, mais proxima a resposta ficou do gabarito.',
+            text='Quanto maior, mais próxima a resposta ficou do gabarito.',
             fill=CORES['texto_suave'],
             font=FONTES['subtitulo'],
             width=250,

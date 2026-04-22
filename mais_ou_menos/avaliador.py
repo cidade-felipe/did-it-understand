@@ -67,7 +67,7 @@ def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
     if configuracao.soma_pesos() <= 0:
         raise ValueError('A soma dos pesos precisa ser maior que zero.')
     if configuracao.limite_parcial > configuracao.limite_entendeu:
-        raise ValueError('O limite de parcial nao pode ser maior que o limite de entendeu.')
+        raise ValueError('O limite de parcial não pode ser maior que o limite de entendeu.')
 
 
 def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: list[str]) -> float:
@@ -149,19 +149,19 @@ def _gerar_observacoes(
 
     if not resposta_usuario.tokens:
         observacoes.append(
-            'A resposta do usuario ficou vazia depois do pre-processamento, por isso a nota foi zerada.'
+            'A resposta do usuário ficou vazia depois do pré-processamento, por isso a nota foi zerada.'
         )
         return observacoes
 
     if similaridade >= 0.75:
-        observacoes.append('A estrutura textual ficou bem proxima da resposta esperada.')
+        observacoes.append('A estrutura textual ficou bem próxima da resposta esperada.')
     elif similaridade >= 0.4:
-        observacoes.append('Ha proximidade textual moderada entre as respostas.')
+        observacoes.append('Há proximidade textual moderada entre as respostas.')
     else:
-        observacoes.append('A proximidade textual ficou baixa, indicando pouca sobreposicao de termos.')
+        observacoes.append('A proximidade textual ficou baixa, indicando pouca sobreposição de termos.')
 
     if cobertura_palavras_chave == 0:
-        observacoes.append('Nenhuma palavra-chave principal da resposta esperada apareceu na resposta do usuario.')
+        observacoes.append('Nenhuma palavra-chave principal da resposta esperada apareceu na resposta do usuário.')
     elif cobertura_palavras_chave < 0.5:
         observacoes.append('A resposta cobriu apenas parte das palavras-chave mais importantes.')
     else:
@@ -170,7 +170,7 @@ def _gerar_observacoes(
     proporcao_tamanho = len(resposta_usuario.tokens) / max(len(resposta_esperada.tokens), 1)
     if proporcao_tamanho < 0.5:
         observacoes.append(
-            'A resposta do usuario e bem mais curta que a esperada, o que pode indicar explicacao incompleta.'
+            'A resposta do usuário é bem mais curta que a esperada, o que pode indicar explicação incompleta.'
         )
 
     if palavras_chave_encontradas:
@@ -215,7 +215,7 @@ def avaliar_resposta(
     _validar_configuracao(configuracao)
 
     if not resposta_esperada.strip():
-        raise ValueError('A resposta esperada nao pode ser vazia.')
+        raise ValueError('A resposta esperada não pode ser vazia.')
 
     resposta_esperada_proc = preprocessar_texto(
         resposta_esperada,

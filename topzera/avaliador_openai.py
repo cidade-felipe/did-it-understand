@@ -73,7 +73,7 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
 
     if ausentes:
         raise RuntimeError(
-            'Configuracao incompleta. Defina no .env: ' + '; '.join(ausentes) + '.'
+            'Configuração incompleta. Defina no .env: ' + '; '.join(ausentes) + '.'
         )
 
     return ConfiguracaoAzureOpenAI(
@@ -137,7 +137,7 @@ def carregar_temperatura() -> float | None:
     try:
         return float(valor)
     except ValueError as erro:
-        raise RuntimeError('AZURE_OPENAI_TEMPERATURE precisa ser um numero, exemplo: 1.') from erro
+        raise RuntimeError('AZURE_OPENAI_TEMPERATURE precisa ser um número, exemplo: 1.') from erro
 
 
 def normalizar_endpoint_azure(endpoint: str) -> str:
@@ -191,7 +191,7 @@ def criar_cliente(configuracao: ConfiguracaoAzureOpenAI):
         from openai import AzureOpenAI
     except ModuleNotFoundError as erro:
         raise RuntimeError(
-            'Biblioteca openai nao instalada. Execute: '
+            'Biblioteca openai não instalada. Execute: '
             'venv\\Scripts\\python -m pip install -r requirements.txt'
         ) from erro
 
@@ -232,11 +232,11 @@ def avaliar_resposta_com_ia(
             insuficientes para executar a chamada.
     '''
     if not pergunta.strip():
-        raise ValueError('A pergunta nao pode ser vazia.')
+        raise ValueError('A pergunta não pode ser vazia.')
     if not resposta_esperada.strip():
-        raise ValueError('A resposta esperada nao pode ser vazia.')
+        raise ValueError('A resposta esperada não pode ser vazia.')
     if not resposta_usuario.strip():
-        raise ValueError('A resposta do usuario nao pode ser vazia.')
+        raise ValueError('A resposta do usuário não pode ser vazia.')
 
     configuracao = configuracao or carregar_configuracao()
     cliente = criar_cliente(configuracao)
@@ -282,15 +282,15 @@ def montar_mensagens(
         Lista de mensagens no formato aceito pela API de chat completions.
     '''
     instrucao_sistema = '''
-Voce e um avaliador de respostas educacionais.
+Você é um avaliador de respostas educacionais.
 Compare a resposta do aluno com a resposta esperada.
 
 Regras:
-- avalie o significado, nao apenas palavras identicas;
-- nao exija informacoes que nao estejam na resposta esperada;
-- aceite parafrases corretas;
-- penalize contradicoes, fuga do tema e explicacoes vagas;
-- retorne somente JSON valido.
+- avalie o significado, não apenas palavras idênticas;
+- não exija informações que não estejam na resposta esperada;
+- aceite paráfrases corretas;
+- penalize contradições, fuga do tema e explicações vagas;
+- retorne somente JSON válido.
 
 Schema do JSON:
 {
@@ -311,10 +311,10 @@ Pergunta:
 Resposta esperada:
 {resposta_esperada}
 
-Resposta do usuario:
+Resposta do usuário:
 {resposta_usuario}
 
-Avalie a resposta do usuario.
+Avalie a resposta do usuário.
 Use nota de 0 a 100.
 Use similaridade_semantica de 0.0 a 1.0.
 '''.strip()
@@ -379,7 +379,7 @@ def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
     try:
         dados = json.loads(conteudo)
     except JSONDecodeError as erro:
-        raise ValueError('O modelo nao retornou um JSON valido.') from erro
+        raise ValueError('O modelo não retornou um JSON válido.') from erro
 
     if not isinstance(dados, dict):
         raise ValueError('O JSON retornado pelo modelo precisa ser um objeto.')
