@@ -18,9 +18,15 @@ console = Console()
 def construir_parser() -> argparse.ArgumentParser:
     '''Monta o parser da linha de comando para o avaliador local.
 
-    O parser concentra as opcoes que controlam entrada de dados e modo de
-    exibicao, reduzindo duplicacao e mantendo o contrato da CLI explicito para
-    uso manual, scripts e demonstracoes.
+    Esta funcao centraliza o contrato da interface de linha de comando. As
+    flags mais importantes sao ``--pergunta``, ``--esperada`` e ``--usuario``,
+    que alimentam diretamente o motor de avaliacao, alem de
+    ``--manter-stopwords``, ``--sem-stemming`` e ``--detalhes``, que alteram
+    o comportamento do pre-processamento e da exibicao.
+
+    Concentrar a definicao dessas opcoes em um unico ponto reduz duplicacao e
+    facilita manutencao, porque qualquer ajuste na forma como a CLI recebe
+    dados fica isolado aqui e nao espalhado pela orquestracao principal.
 
     Returns:
         Instancia de ``ArgumentParser`` pronta para interpretar os argumentos
@@ -53,8 +59,14 @@ def construir_parser() -> argparse.ArgumentParser:
 def ler_entrada_interativa() -> tuple[str, str, str]:
     '''Coleta pergunta e respostas diretamente do terminal.
 
-    Esse caminho e usado quando a CLI e executada sem argumentos, o que facilita
-    testes rapidos e apresentacoes sem exigir que o usuario memorize flags.
+    Esse fluxo e acionado quando a aplicacao e executada sem argumentos. As
+    variaveis retornadas, ``pergunta``, ``resposta_esperada`` e
+    ``resposta_usuario``, sao exatamente as mesmas consumidas pelo avaliador,
+    apenas capturadas por ``input`` em vez de flags da CLI.
+
+    O ``strip`` aplicado em cada campo evita que espacos acidentais nas
+    extremidades contaminem a avaliacao, o que melhora a consistencia entre
+    uso manual e uso automatizado.
 
     Returns:
         Tupla com pergunta, resposta esperada e resposta do usuario, sempre com
@@ -70,10 +82,18 @@ def ler_entrada_interativa() -> tuple[str, str, str]:
 def exibir_resultado(resultado: ResultadoAvaliacao, mostrar_detalhes: bool = False) -> None:
     '''Renderiza o resultado da avaliacao em formato amigavel no terminal.
 
-    A tabela principal resume as metricas mais importantes para leitura rapida.
-    Quando ``mostrar_detalhes`` esta habilitado, a funcao tambem exibe os
-    artefatos do pre-processamento e as observacoes geradas pelo avaliador,
-    o que ajuda a explicar como a nota foi formada.
+    A funcao recebe o objeto ``resultado`` ja consolidado e traduz esse
+    conteudo para uma visualizacao mais facil de consumir por quem esta
+    executando o projeto manualmente. Os campos mais importantes exibidos na
+    tabela sao ``nota``, ``feedback``, ``similaridade`` e
+    ``cobertura_palavras_chave``, porque eles resumem desempenho, classificacao
+    final e os dois sinais que sustentam a nota.
+
+    Quando ``mostrar_detalhes`` esta ativo, a exibicao aprofunda a leitura com
+    tokens, radicais de comparacao e listas de palavras-chave. Isso e
+    especialmente util para depuracao, para explicar resultados em sala ou
+    para calibrar regras de pre-processamento sem precisar instrumentar o
+    codigo manualmente.
 
     Args:
         resultado: Objeto retornado pelo motor de avaliacao com todos os dados
@@ -115,10 +135,16 @@ def exibir_resultado(resultado: ResultadoAvaliacao, mostrar_detalhes: bool = Fal
 def main() -> None:
     '''Executa o fluxo principal da CLI do avaliador baseado em PLN.
 
-    A funcao decide entre modo interativo e modo por argumentos, valida se a
-    entrada esta completa, monta a configuracao operacional e delega a analise
-    ao modulo avaliador. O objetivo e concentrar a orquestracao da interface em
-    um unico ponto facil de manter.
+    Esta funcao orquestra toda a experiencia de uso no terminal. A variavel
+    ``args`` concentra o resultado do parsing, ``entradas_preenchidas`` decide
+    se a execucao seguira por argumentos ou por coleta interativa, e
+    ``configuracao`` traduz as flags da CLI em parametros concretos para o
+    motor de avaliacao.
+
+    O ponto principal desta funcao nao e calcular a nota, e sim garantir que o
+    contrato de entrada seja respeitado. Isso evita cenarios em que parte dos
+    dados chega por argumento e parte fica ausente, o que reduziria a
+    confiabilidade da avaliacao e aumentaria o custo de suporte.
     '''
     parser = construir_parser()
     args = parser.parse_args()

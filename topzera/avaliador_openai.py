@@ -37,10 +37,18 @@ class ResultadoAvaliacaoIA:
 def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
     '''Le configuracao do ambiente e monta o objeto de acesso ao Azure OpenAI.
 
-    A funcao busca nomes alternativos de variavel para reduzir atrito entre
-    ambientes, normaliza o endpoint e converte a temperatura para um tipo
-    seguro. Se algum campo obrigatorio estiver ausente, a falha acontece cedo,
-    com mensagem explicita.
+    Esta funcao e a porta de entrada de toda a integracao com Azure OpenAI. O
+    fluxo carrega o arquivo ``.env``, tenta resolver credenciais por nomes
+    alternativos e consolida tudo em um objeto tipado. As variaveis mais
+    importantes sao ``api_key``, ``endpoint``, ``deployment`` e
+    ``api_version``, porque definem autenticacao, destino da chamada e modelo
+    efetivamente utilizado. A variavel ``temperatura`` entra como parametro
+    opcional de comportamento do modelo.
+
+    Ha tambem uma lista auxiliar, ``ausentes``, usada para acumular quais
+    configuracoes obrigatorias nao foram encontradas. Isso melhora muito a
+    experiencia de operacao, porque a falha deixa claro o que precisa ser
+    corrigido antes de consumir a API e gerar custo desnecessario.
 
     Returns:
         Estrutura tipada com credenciais e parametros operacionais da API.
@@ -88,8 +96,13 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
 def obter_env(*nomes: str) -> str:
     '''Retorna o primeiro valor de ambiente valido ou string vazia.
 
-    Essa funcao simplifica chamadas em que o codigo prefere trabalhar sempre
-    com ``str``, mesmo quando nenhuma variavel configurada foi encontrada.
+    Esta funcao e um wrapper sobre ``obter_env_opcional`` para os pontos do
+    codigo em que trabalhar com string vazia e mais simples do que lidar com
+    ``None``. O parametro variadico ``nomes`` representa a prioridade de busca
+    entre diferentes convencoes de ambiente.
+
+    Esse desenho reduz condicionais espalhadas pela base e ajuda a manter o
+    carregamento de configuracao mais previsivel.
 
     Args:
         *nomes: Variaveis de ambiente candidatas, em ordem de prioridade.
@@ -104,6 +117,11 @@ def obter_env(*nomes: str) -> str:
 
 def obter_env_opcional(*nomes: str) -> str | None:
     '''Procura a primeira variavel de ambiente nao vazia entre varios nomes.
+
+    A funcao percorre ``nomes`` em ordem e retorna o primeiro valor que exista
+    e contenha texto util depois de ``strip``. O retorno opcional permite ao
+    codigo chamador diferenciar com clareza entre "nao configurado" e
+    "configurado com conteudo valido".
 
     Args:
         *nomes: Lista ordenada de chaves que podem conter a configuracao.
@@ -121,6 +139,16 @@ def obter_env_opcional(*nomes: str) -> str | None:
 
 def carregar_temperatura() -> float | None:
     '''Carrega a temperatura opcional do modelo a partir do ambiente.
+
+    A variavel de interesse aqui e ``AZURE_OPENAI_TEMPERATURE``. Quando ela
+    existe, a funcao tenta convertela para ``float`` de forma defensiva.
+    Quando nao existe, retorna ``None`` para que a chamada da API use o
+    comportamento padrao do provedor.
+
+    Essa abordagem evita duas classes de problema: falhar por ausencia de um
+    parametro que e opcional e, ao mesmo tempo, aceitar silenciosamente um
+    valor textual invalido que mudaria o comportamento do modelo de forma
+    imprevisivel.
 
     Returns:
         Valor em ponto flutuante quando a configuracao existe, ou ``None`` para
@@ -143,9 +171,23 @@ def carregar_temperatura() -> float | None:
 def normalizar_endpoint_azure(endpoint: str) -> str:
     '''Normaliza o endpoint base do Azure OpenAI.
 
-    Alguns usuarios informam URLs completas contendo sufixos como ``/openai`` ou
-    rotas de deployment. Esta funcao remove esses trechos para preservar apenas
-    o endpoint base aceito pelo cliente oficial e garante a barra final.
+    Em ambientes reais, e comum encontrar o endpoint configurado com trechos a
+    mais, como ``/openai`` ou rotas completas de deployment. Esta funcao limpa
+    essas variacoes para produzir um endpoint base compativel com o cliente
+    oficial.
+
+    Variaveis importantes no processo:
+        - ``partes`` recebe o resultado de ``urlsplit`` para separar esquema,
+          host e caminho;
+        - ``caminho`` concentra apenas a parte da rota que pode precisar de
+          poda;
+        - ``indice_openai`` identifica se existe um segmento ``/openai`` a ser
+          removido;
+        - ``endpoint_limpo`` recompõe a URL final sem query string nem
+          fragmentos.
+
+    Isso reduz erro de configuracao e economiza tempo de diagnostico, porque o
+    projeto tolera pequenas inconsistencias de preenchimento no ``.env``.
 
     Args:
         endpoint: Valor bruto informado no ambiente.
@@ -172,9 +214,15 @@ def normalizar_endpoint_azure(endpoint: str) -> str:
 def criar_cliente(configuracao: ConfiguracaoAzureOpenAI):
     '''Instancia o cliente do Azure OpenAI sob demanda.
 
-    O import tardio evita falha de importacao em cenarios onde o usuario apenas
-    deseja validar configuracao ou inspecionar o codigo sem ter a dependencia
-    instalada.
+    O parametro ``configuracao`` concentra os dados necessarios para abrir a
+    conexao, especialmente ``endpoint``, ``api_key`` e ``api_version``. O
+    import tardio de ``AzureOpenAI`` e intencional: ele evita que a simples
+    execucao de comandos como ``--check-config`` falhe quando a dependencia nao
+    foi instalada.
+
+    Essa separacao melhora manutencao e operacao. O codigo so exige a
+    biblioteca no momento em que realmente vai chamar a API, o que reduz
+    acoplamento entre validacao local e consumo efetivo do servico.
 
     Args:
         configuracao: Credenciais e parametros necessarios para abrir conexao
@@ -210,10 +258,24 @@ def avaliar_resposta_com_ia(
 ) -> ResultadoAvaliacaoIA:
     '''Avalia semanticamente a resposta do usuario via Azure OpenAI.
 
-    O metodo valida entradas obrigatorias, monta a chamada para o modelo com um
-    schema JSON restrito e depois sanitiza a resposta para uma estrutura tipada.
-    Esse desenho reduz risco de consumo inconsistente da API e facilita
-    rastrear o motivo da nota gerada pelo modelo.
+    Esta e a funcao central do avaliador baseado em IA. O fluxo valida as
+    entradas, resolve ou recebe a ``configuracao``, cria o ``cliente`` e monta
+    o dicionario ``parametros`` que sera enviado para
+    ``client.chat.completions.create``. Depois, processa a resposta em tres
+    etapas: extrai ``conteudo``, converte para ``dados`` JSON e transforma esse
+    JSON em ``ResultadoAvaliacaoIA`` por meio de ``montar_resultado``.
+
+    Variaveis principais do fluxo:
+        - ``configuracao`` define como e para onde a chamada sera feita;
+        - ``parametros`` concentra modelo, mensagens, formato de resposta e
+          temperatura opcional;
+        - ``resposta`` e o objeto bruto devolvido pela API;
+        - ``conteudo`` representa o JSON textual emitido pelo modelo;
+        - ``dados`` e a versao parseada e pronta para validacao defensiva.
+
+    O principal ganho dessa separacao e confiabilidade operacional. Em vez de
+    espalhar parsing e normalizacao pela base, o pipeline deixa claro onde a
+    API e chamada, onde o JSON e validado e onde o resultado final e montado.
 
     Args:
         pergunta: Enunciado que contextualiza a avaliacao.
@@ -269,9 +331,16 @@ def montar_mensagens(
 ) -> list[dict[str, str]]:
     '''Constroi as mensagens enviadas ao modelo de linguagem.
 
-    O prompt de sistema restringe o comportamento esperado do avaliador e o
-    formato de saida. A mensagem de usuario injeta o contexto especifico do
-    exercicio, mantendo a estrutura da requisicao previsivel para depuracao.
+    A funcao separa a requisicao em dois blocos principais:
+    ``instrucao_sistema``, que define regras de avaliacao e schema de saida, e
+    ``tarefa_usuario``, que injeta os dados concretos do exercicio. As
+    variaveis ``pergunta``, ``resposta_esperada`` e ``resposta_usuario`` entram
+    apenas na mensagem de usuario, preservando o prompt de sistema como
+    contrato fixo do avaliador.
+
+    Essa estrutura melhora consistencia do modelo, facilita depuracao e reduz
+    risco de respostas fora de formato, porque o schema JSON esperado fica
+    explicitado sempre da mesma forma.
 
     Args:
         pergunta: Enunciado da atividade.
@@ -333,8 +402,15 @@ def montar_resultado(
 ) -> ResultadoAvaliacaoIA:
     '''Converte o JSON do modelo em uma estrutura tipada e segura.
 
-    A funcao aplica normalizacao defensiva em campos numericos e textuais para
-    reduzir impacto de respostas parcialmente fora do schema esperado.
+    O objetivo aqui e transformar um dicionario generico em um objeto
+    previsivel para o restante do sistema. As variaveis ``nota`` e
+    ``similaridade`` passam por ``limitar_float`` para evitar valores fora de
+    faixa, enquanto ``feedback`` passa por ``normalizar_feedback`` para caber
+    na taxonomia oficial do projeto.
+
+    Os campos de lista, como ``pontos_corretos``, ``lacunas`` e ``alertas``,
+    sao saneados por ``normalizar_lista``. Isso reduz a chance de a camada de
+    apresentacao quebrar por causa de retornos parcialmente fora do schema.
 
     Args:
         pergunta: Enunciado associado a avaliacao.
@@ -366,6 +442,15 @@ def montar_resultado(
 def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
     '''Converte o conteudo textual do modelo em um dicionario JSON valido.
 
+    A variavel ``conteudo`` representa a resposta textual bruta do modelo. A
+    funcao tenta desserializar esse texto com ``json.loads`` e depois garante
+    que o retorno seja um objeto JSON, nao uma lista, string ou numero solto.
+
+    Essa verificacao e importante porque a API pode responder com texto
+    malformatado ou com um tipo inesperado mesmo quando o prompt pede um
+    objeto. Falhar cedo aqui reduz risco de erro mais obscuro nas camadas
+    seguintes.
+
     Args:
         conteudo: Texto bruto retornado pelo modelo.
 
@@ -389,6 +474,16 @@ def carregar_resultado_json(conteudo: str) -> dict[str, Any]:
 def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
     '''Converte um valor para ``float`` e restringe ao intervalo permitido.
 
+    Esta funcao protege o sistema contra valores numericos inconsistentes. O
+    parametro ``valor`` pode vir em qualquer formato retornado pela API, e os
+    limites ``minimo`` e ``maximo`` definem a faixa segura para o campo em
+    questao, como ``0`` a ``100`` para nota ou ``0.0`` a ``1.0`` para
+    similaridade.
+
+    Se a conversao falha, o codigo escolhe o limite inferior como fallback
+    conservador. Isso prioriza robustez e evita propagar excecoes de parsing
+    para camadas que esperam apenas um numero valido.
+
     Args:
         valor: Valor bruto retornado pela API ou por outra etapa do pipeline.
         minimo: Limite inferior aceito.
@@ -408,8 +503,14 @@ def limitar_float(valor: Any, minimo: float, maximo: float) -> float:
 def normalizar_feedback(feedback_modelo: str, nota: float) -> str:
     '''Padroniza o feedback textual em uma taxonomia fixa do projeto.
 
-    A normalizacao tolera variacoes comuns de rotulo produzidas pelo modelo e,
-    quando necessario, cai para uma inferencia baseada na nota numerica.
+    O campo ``feedback_modelo`` pode chegar com variacoes de rotulo, sinonimos
+    ou ate pequenas inconsistencias de escrita. Esta funcao tenta primeiro
+    enquadrar essas variacoes em uma taxonomia controlada. Se isso nao for
+    possivel, usa ``nota`` como fallback para inferir a classe final.
+
+    Essa padronizacao tem impacto direto na confiabilidade da interface e em
+    futuras analises agregadas, porque evita que pequenas diferencas textuais
+    do modelo criem categorias duplicadas ou ambiguidade de leitura.
 
     Args:
         feedback_modelo: Rotulo textual original vindo do modelo.
@@ -434,6 +535,15 @@ def normalizar_feedback(feedback_modelo: str, nota: float) -> str:
 
 def normalizar_lista(valor: Any) -> list[str]:
     '''Converte um campo potencialmente heterogeneo em lista limpa de strings.
+
+    O parametro ``valor`` pode conter exatamente o que o modelo decidiu
+    devolver, inclusive tipos inesperados. A funcao garante que apenas listas
+    validas sejam aceitas e que cada item seja convertido para string, tenha
+    ``strip`` aplicado e seja descartado se ficar vazio.
+
+    Esse saneamento e importante para campos como ``pontos_corretos``,
+    ``lacunas`` e ``alertas``, porque a camada de exibicao presume listas
+    simples e prontas para impressao.
 
     Args:
         valor: Valor bruto retornado pela API para campos como pontos corretos,

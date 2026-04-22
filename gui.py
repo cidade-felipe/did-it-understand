@@ -133,15 +133,23 @@ class DidItUnderstandGUI(tk.Tk):
         self.configure(bg=CORES['fundo'])
 
         self.exemplos = carregar_exemplos()
+        self.exemplo_placeholder = 'Selecione um exemplo'
+        self.exemplo_indisponivel = 'Nenhum exemplo disponível'
+        self.nomes_exemplos = [
+            str(exemplo.get('nome', f'Exemplo {indice}')).strip() or f'Exemplo {indice}'
+            for indice, exemplo in enumerate(self.exemplos, start=1)
+        ]
         self.animacao_id: str | None = None
         self.nota_animada = 0.0
         self.operacao_em_execucao = False
-        self.indice_exemplo_atual = -1
 
         self.modo_var = tk.StringVar(value='mais_ou_menos')
         self.remover_stopwords_var = tk.BooleanVar(value=True)
         self.aplicar_stemming_var = tk.BooleanVar(value=True)
         self.mostrar_detalhes_var = tk.BooleanVar(value=True)
+        self.exemplo_selecionado_var = tk.StringVar(
+            value=self.exemplo_placeholder if self.exemplos else self.exemplo_indisponivel
+        )
         self.exemplo_info_var = tk.StringVar(
             value='Nenhum exemplo carregado. Se quiser, você pode criar uma pergunta nova do zero.'
         )
@@ -424,14 +432,25 @@ class DidItUnderstandGUI(tk.Tk):
 
         acoes_exemplo = tk.Frame(card_exemplos, bg=CORES['cartao'])
         acoes_exemplo.grid(row=2, column=0, sticky='ew', pady=(12, 0))
-        acoes_exemplo.columnconfigure(1, weight=1)
+        acoes_exemplo.columnconfigure(0, weight=1)
 
-        self.botao_carregar = self._criar_botao_secundario(
-            acoes_exemplo,
-            texto='Carregar exemplo pronto',
-            comando=self._carregar_exemplo,
+        opcoes_exemplos = (
+            [self.exemplo_placeholder, *self.nomes_exemplos]
+            if self.exemplos
+            else [self.exemplo_indisponivel]
         )
-        self.botao_carregar.grid(row=0, column=0, sticky='w')
+        self.combo_exemplos = ttk.Combobox(
+            acoes_exemplo,
+            textvariable=self.exemplo_selecionado_var,
+            values=opcoes_exemplos,
+            state='readonly' if self.exemplos else 'disabled',
+            style='Custom.TCombobox',
+            font=FONTES['corpo'],
+        )
+        self.combo_exemplos.grid(row=0, column=0, sticky='ew')
+        if self.exemplos:
+            self.combo_exemplos.current(0)
+            self.combo_exemplos.bind('<<ComboboxSelected>>', self._ao_selecionar_exemplo)
 
         tk.Label(
             acoes_exemplo,
@@ -439,9 +458,9 @@ class DidItUnderstandGUI(tk.Tk):
             bg=CORES['cartao'],
             fg=CORES['texto_suave'],
             font=FONTES['subtitulo'],
-            wraplength=380,
+            wraplength=560,
             justify='left',
-        ).grid(row=0, column=1, sticky='w', padx=(14, 0))
+        ).grid(row=1, column=0, sticky='w', pady=(10, 0))
 
         self.card_opcoes = self._criar_cartao_interno(card)
         self.card_opcoes.grid(row=6, column=0, sticky='ew', pady=(18, 0))
@@ -1029,23 +1048,33 @@ class DidItUnderstandGUI(tk.Tk):
         self.label_feedback.configure(bg=CORES['navy'])
         self._animar_nota(0.0)
 
-    def _carregar_exemplo(self) -> None:
-        '''Preenche a tela com um exemplo pronto do projeto.'''
-        if not self.exemplos:
-            messagebox.showinfo('Exemplos', 'Nenhum exemplo pronto foi encontrado no projeto.')
+    def _ao_selecionar_exemplo(self, _event: tk.Event | None = None) -> None:
+        '''Carrega o exemplo escolhido no dropdown para os campos da tela.'''
+        indice = self.combo_exemplos.current() - 1
+        if indice < 0:
+            self.exemplo_info_var.set(
+                'Nenhum exemplo carregado. Se quiser, você pode criar uma pergunta nova do zero.'
+            )
+            self.status_var.set('Seleção de exemplo limpa. Os campos atuais foram mantidos.')
+            return
+        self._carregar_exemplo(indice)
+
+    def _carregar_exemplo(self, indice: int) -> None:
+        '''Preenche a tela com o exemplo selecionado no dropdown.'''
+        if indice < 0 or indice >= len(self.exemplos):
             return
 
-        self.indice_exemplo_atual = (self.indice_exemplo_atual + 1) % len(self.exemplos)
-        exemplo = self.exemplos[self.indice_exemplo_atual]
+        exemplo = self.exemplos[indice]
+        nome_exemplo = self.nomes_exemplos[indice]
 
         self._definir_texto(self.texto_pergunta, exemplo.get('pergunta', ''))
         self._definir_texto(self.texto_esperada, exemplo.get('resposta_esperada', ''))
         self._definir_texto(self.texto_usuario, exemplo.get('resposta_usuario', ''))
         self.exemplo_info_var.set(
-            f"Último exemplo carregado: {exemplo.get('nome', 'Exemplo sem nome')}. Clique de novo para trocar."
+            f'Exemplo selecionado: {nome_exemplo}. Você pode editar os campos livremente depois.'
         )
         self.status_var.set(
-            'Exemplo pronto carregado. Se quiser criar uma pergunta nova, basta editar os campos livremente.'
+            f'Exemplo "{nome_exemplo}" carregado. Se quiser, ajuste os campos antes de avaliar.'
         )
 
     def _limpar_campos(self) -> None:
@@ -1054,7 +1083,8 @@ class DidItUnderstandGUI(tk.Tk):
             return
         for widget in (self.texto_pergunta, self.texto_esperada, self.texto_usuario):
             self._definir_texto(widget, '')
-        self.indice_exemplo_atual = -1
+        if self.exemplos:
+            self.combo_exemplos.current(0)
         self.exemplo_info_var.set(
             'Campos limpos. Agora você pode escrever uma pergunta nova sem depender dos exemplos.'
         )
@@ -1345,12 +1375,13 @@ class DidItUnderstandGUI(tk.Tk):
         for widget in (
             self.botao_avaliar,
             self.botao_limpar,
-            self.botao_carregar,
             self.botao_check_azure,
             self.botao_mais_ou_menos,
             self.botao_topzera,
         ):
             widget.configure(state=estado)
+
+        self.combo_exemplos.configure(state='disabled' if ativo or not self.exemplos else 'readonly')
 
         if ativo:
             self.progressbar.start(12)

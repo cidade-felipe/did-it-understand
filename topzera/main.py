@@ -11,6 +11,14 @@ from avaliador_openai import ResultadoAvaliacaoIA, avaliar_resposta_com_ia, carr
 def construir_parser() -> argparse.ArgumentParser:
     '''Monta o parser da CLI do avaliador baseado em Azure OpenAI.
 
+    Esta funcao define o contrato de entrada da aplicacao. As flags principais
+    sao ``--pergunta``, ``--esperada`` e ``--usuario``, que alimentam a
+    avaliacao, e ``--check-config``, que permite validar o ambiente sem chamar
+    a API e sem gerar custo.
+
+    Centralizar essa definicao melhora manutencao da CLI e deixa explicito, em
+    um unico lugar, quais combinacoes de uso o programa suporta.
+
     Returns:
         Parser configurado com as flags necessarias para avaliacao interativa,
         avaliacao por argumentos e verificacao isolada de configuracao.
@@ -32,8 +40,13 @@ def construir_parser() -> argparse.ArgumentParser:
 def ler_entrada_interativa() -> tuple[str, str, str]:
     '''Coleta dados de avaliacao diretamente do terminal.
 
-    Esse modo e util para testes manuais e demonstracoes em que a pessoa
-    prefere digitar as respostas em vez de montar a chamada completa por flags.
+    Este caminho e usado quando a pessoa executa a CLI sem informar os tres
+    argumentos de avaliacao. As variaveis ``pergunta``, ``resposta_esperada`` e
+    ``resposta_usuario`` sao coletadas por ``input`` e retornadas ja com
+    ``strip`` aplicado, reduzindo ruido por espacos acidentais.
+
+    O modo interativo e util para testes manuais, demonstracoes e depuracao
+    rapida, porque elimina a necessidade de montar toda a linha de comando.
 
     Returns:
         Tupla com pergunta, resposta esperada e resposta do usuario.
@@ -47,6 +60,15 @@ def ler_entrada_interativa() -> tuple[str, str, str]:
 
 def exibir_resultado(resultado: ResultadoAvaliacaoIA) -> None:
     '''Imprime o resultado da avaliacao semantica em formato legivel.
+
+    A funcao recebe ``resultado`` ja consolidado e exibe os campos mais
+    relevantes para tomada de decisao humana: ``feedback``, ``nota``,
+    ``similaridade_semantica`` e ``justificativa``. Em seguida, delega a
+    impressao das listas auxiliares para ``imprimir_lista``.
+
+    O objetivo e transformar a resposta estruturada da IA em uma saida simples
+    de terminal, boa o bastante para validacao manual, apresentacoes e uso em
+    operacao leve sem interface grafica.
 
     Args:
         resultado: Estrutura retornada pelo avaliador com nota, feedback,
@@ -68,6 +90,10 @@ def exibir_resultado(resultado: ResultadoAvaliacaoIA) -> None:
 def imprimir_lista(titulo: str, itens: list[str]) -> None:
     '''Renderiza uma lista nomeada somente quando houver itens relevantes.
 
+    As variaveis principais sao ``titulo``, que nomeia a secao, e ``itens``,
+    que carrega o conteudo textual. A verificacao inicial evita imprimir blocos
+    vazios, o que deixa a saida final mais limpa e mais facil de ler.
+
     Args:
         titulo: Rotulo exibido acima da lista.
         itens: Conteudo textual a ser impresso, um item por linha.
@@ -81,6 +107,15 @@ def imprimir_lista(titulo: str, itens: list[str]) -> None:
 
 def executar_check_config() -> int:
     '''Valida a configuracao local sem consumir a API do Azure OpenAI.
+
+    A funcao chama ``carregar_configuracao`` e expõe de forma amigavel os
+    valores mais importantes da integracao, especialmente ``endpoint``,
+    ``deployment`` e ``api_version``. Ela existe para separar um problema
+    comum de operacao, ambiente mal configurado, de um problema de avaliacao em
+    si.
+
+    Isso economiza tempo e custo, porque a pessoa consegue validar o setup
+    antes de abrir uma chamada real para o modelo.
 
     Returns:
         Codigo de saida ``0`` quando a configuracao minima foi encontrada e
@@ -97,9 +132,15 @@ def executar_check_config() -> int:
 def main() -> int:
     '''Orquestra a execucao principal da CLI semantica.
 
-    A funcao trata parsing de argumentos, escolha entre modo interativo e
-    automatizado, execucao do check de configuracao e traducao de excecoes para
-    codigo de saida apropriado em terminal.
+    Esta funcao concentra a jornada completa da aplicacao em terminal. A
+    variavel ``args`` guarda os argumentos parseados, ``entradas`` verifica se
+    a pessoa informou o trio completo de textos e o bloco ``try`` centraliza o
+    tratamento de falhas operacionais em um retorno numerico simples.
+
+    O fluxo cobre tres cenarios: validacao isolada de configuracao por
+    ``--check-config``, avaliacao por argumentos e avaliacao interativa. Essa
+    orquestracao em um unico ponto reduz duplicacao, facilita manutencao e
+    deixa claro como a CLI transforma entrada humana em chamada ao avaliador.
 
     Returns:
         Codigo de saida do processo, onde ``0`` representa sucesso e ``1``

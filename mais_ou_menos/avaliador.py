@@ -28,8 +28,17 @@ class ConfiguracaoAvaliacao:
     def soma_pesos(self) -> float:
         '''Retorna a soma dos pesos usados na composicao da nota final.
 
-        Centralizar esse calculo em um unico ponto evita divergencia entre a
-        validacao da configuracao e a formula usada para gerar a nota.
+        A nota consolidada nasce da combinacao de dois sinais principais:
+        ``peso_similaridade``, que mede o quanto a resposta do usuario se
+        aproxima lexicalmente da resposta esperada, e
+        ``peso_palavras_chave``, que mede se os conceitos centrais apareceram.
+        Concentrar esse calculo em um unico metodo evita que a validacao da
+        configuracao e a formula final usem totais diferentes, o que
+        distorceria a escala de 0 a 100.
+
+        Returns:
+            Soma simples dos pesos configurados para os dois criterios
+            principais de avaliacao.
         '''
         return self.peso_similaridade + self.peso_palavras_chave
 
@@ -53,9 +62,18 @@ class ResultadoAvaliacao:
 def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
     '''Valida se a configuracao permite uma avaliacao coerente.
 
-    A funcao protege o pipeline contra pesos inconsistentes e contra limites
-    de classificacao invertidos, o que poderia gerar notas validas do ponto de
-    vista numerico, mas feedbacks semanticamente errados.
+    Esta validacao acontece antes de qualquer processamento de texto para
+    impedir que o sistema gere uma nota matematicamente calculavel, mas
+    semanticamente enganosa. As variaveis mais importantes aqui sao
+    ``peso_similaridade`` e ``peso_palavras_chave``, que precisam somar um
+    valor positivo para a formula da nota funcionar, e ``limite_parcial`` com
+    ``limite_entendeu``, que definem a fronteira entre os feedbacks
+    categorizados.
+
+    Sem essa checagem, seria possivel executar o pipeline inteiro e ainda
+    assim produzir um resultado incorreto do ponto de vista de negocio, como
+    classificar uma resposta melhor como inferior a outra apenas por causa de
+    limites invertidos.
 
     Args:
         configuracao: Parametros que controlam o calculo da nota e do feedback.
@@ -73,10 +91,24 @@ def _validar_configuracao(configuracao: ConfiguracaoAvaliacao) -> None:
 def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: list[str]) -> float:
     '''Calcula a similaridade vetorial entre duas listas de tokens.
 
-    O texto esperado e o texto do usuario sao transformados em documentos
-    artificiais para que o TF-IDF compare a distribuicao dos termos. O retorno
-    fica entre 0.0 e 1.0 e serve como um sinal de proximidade textual, nao de
-    compreensao semantica completa.
+    O algoritmo transforma ``tokens_esperados`` e ``tokens_usuario`` em dois
+    documentos artificiais, ``documento_esperado`` e ``documento_usuario``,
+    apenas para que o ``TfidfVectorizer`` consiga montar uma
+    ``matriz_tfidf`` comparavel. Em seguida, a ``matriz_similaridade`` mede o
+    cosseno entre esses vetores e retorna um valor entre ``0.0`` e ``1.0``.
+
+    As variaveis centrais desta funcao sao:
+        - ``documento_esperado`` e ``documento_usuario``, que condensam os
+          tokens em strings adequadas para o vetorizador;
+        - ``matriz_tfidf``, que representa a importancia relativa de cada
+          termo em cada resposta;
+        - ``matriz_similaridade``, que traduz a proximidade vetorial em um
+          numero simples para compor a nota final.
+
+    Essa metrica funciona bem como um sinal barato e interpretavel de
+    proximidade textual. Ao mesmo tempo, a docstring deixa claro que ela nao
+    representa compreensao semantica completa sozinha, por isso o projeto a
+    combina com palavras-chave.
 
     Args:
         tokens_esperados: Tokens derivados da resposta de referencia.
@@ -105,6 +137,16 @@ def calcular_similaridade_tfidf(tokens_esperados: list[str], tokens_usuario: lis
 def _classificar_feedback(nota: float, configuracao: ConfiguracaoAvaliacao) -> str:
     '''Traduz a nota numerica em uma categoria de feedback.
 
+    A decisao depende diretamente de tres variaveis: ``nota``,
+    ``configuracao.limite_entendeu`` e ``configuracao.limite_parcial``. A
+    primeira informa o desempenho consolidado da resposta, enquanto as duas
+    ultimas determinam o corte minimo para enquadrar o resultado como
+    ``Entendeu``, ``Parcial`` ou ``Nao entendeu``.
+
+    Isolar essa regra em uma funcao separada reduz acoplamento com a etapa de
+    calculo numerico e facilita ajustes futuros de taxonomia sem mexer na
+    formula da nota.
+
     Args:
         nota: Nota final ja normalizada na escala de 0 a 100.
         configuracao: Configuracao com os limites que separam os niveis
@@ -127,10 +169,18 @@ def _gerar_observacoes(
 ) -> list[str]:
     '''Gera observacoes textuais para ajudar a interpretar a nota.
 
-    As observacoes resumem heuristicas importantes do avaliador, como
-    proximidade textual, cobertura das palavras-chave centrais e diferenca de
-    tamanho entre as respostas. Esse resumo reduz o risco de tratar a nota como
-    caixa-preta durante apresentacoes, depuracao e ajustes de parametro.
+    A funcao transforma sinais tecnicos em frases legiveis para quem esta
+    consumindo o resultado. As variaveis principais sao ``similaridade``,
+    ``cobertura_palavras_chave`` e ``palavras_chave_encontradas``, que
+    resumem respectivamente proximidade textual, presenca dos conceitos
+    centrais e quais termos relevantes realmente apareceram. A variavel local
+    ``proporcao_tamanho`` complementa a leitura ao indicar se a resposta do
+    usuario ficou muito curta em relacao ao esperado.
+
+    Na pratica, essa camada melhora interpretabilidade. Em vez de expor apenas
+    uma nota, o sistema entrega pistas concretas sobre o motivo do resultado,
+    o que reduz atrito em depuracao, apresentacoes academicas e calibracao de
+    parametros.
 
     Args:
         resposta_esperada: Estrutura processada da resposta de referencia.
@@ -189,11 +239,31 @@ def avaliar_resposta(
 ) -> ResultadoAvaliacao:
     '''Avalia o quanto a resposta do usuario se aproxima da resposta esperada.
 
-    O fluxo combina pre-processamento linguistico, similaridade TF-IDF e
-    cobertura de palavras-chave para produzir uma nota de 0 a 100, um feedback
-    categorizado e observacoes explicativas. A estrategia privilegia
-    simplicidade, interpretabilidade e baixo custo computacional, o que e util
-    para demostracoes e trabalhos academicos.
+    Esta e a funcao central do avaliador local. O fluxo passa por quatro
+    etapas: validacao da configuracao, pre-processamento das duas respostas,
+    calculo das metricas intermediarias e consolidacao do resultado final.
+
+    Variaveis e artefatos mais importantes do fluxo:
+        - ``resposta_esperada_proc`` e ``resposta_usuario_proc`` armazenam as
+          versoes processadas dos textos, incluindo tokens limpos e tokens de
+          comparacao;
+        - ``palavras_chave`` representa os conceitos mais relevantes extraidos
+          da resposta esperada;
+        - ``palavras_encontradas`` identifica o subconjunto dessas palavras
+          que apareceu no texto do usuario, inclusive por radical;
+        - ``cobertura_palavras_chave`` mede a fracao de conceitos centrais
+          cobertos;
+        - ``similaridade`` captura a proximidade lexical entre as respostas;
+        - ``nota_base`` combina os sinais ponderados antes da conversao para a
+          escala percentual final;
+        - ``feedback`` traduz a nota numerica em uma classificacao simples e
+          comunicavel.
+
+    A escolha por combinar similaridade TF-IDF e cobertura de palavras-chave
+    busca um equilibrio entre simplicidade, transparencia e custo
+    computacional. O metodo nao tenta resolver semantica profunda, mas entrega
+    um comportamento facil de explicar e suficientemente util para cenarios
+    educacionais, demonstracoes e prototipos de avaliacao automatizada.
 
     Args:
         pergunta: Enunciado associado a resposta, preservado no resultado para

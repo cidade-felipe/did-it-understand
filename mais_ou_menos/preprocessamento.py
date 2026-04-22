@@ -132,9 +132,14 @@ class TextoProcessado:
 def remover_acentos(texto: str) -> str:
     '''Remove acentos e caracteres diacriticos de um texto.
 
-    Essa etapa reduz variacoes ortograficas que atrapalham comparacoes
-    lexicais, principalmente quando respostas equivalentes usam grafias com e
-    sem acentuacao.
+    Esta e uma etapa basica, mas importante, para reduzir variacoes
+    superficiais de escrita. A variavel ``texto`` entra em formato bruto e sai
+    em uma representacao ASCII aproximada, o que ajuda a tratar como
+    equivalentes palavras escritas com ou sem acento.
+
+    No contexto do projeto, isso diminui falso negativo em comparacoes
+    lexicais, principalmente quando a resposta do usuario esta correta do ponto
+    de vista conceitual, mas usa grafias ligeiramente diferentes.
 
     Args:
         texto: Texto bruto a ser normalizado.
@@ -148,9 +153,14 @@ def remover_acentos(texto: str) -> str:
 def normalizar_texto(texto: str) -> str:
     '''Padroniza o texto para as etapas seguintes do pipeline.
 
-    O processamento converte para minusculas, remove acentos, substitui
-    pontuacao por espacos e colapsa espacamentos repetidos. O tratamento de
-    ``None`` como string vazia evita falhas desnecessarias em cenarios reais.
+    O pipeline interno desta funcao usa a variavel ``texto`` como entrada
+    bruta, converte ``None`` para string vazia, aplica minusculas, remove
+    acentos e troca pontuacoes por espacos. No final, espacos repetidos sao
+    colapsados para deixar a tokenizacao mais previsivel.
+
+    Esse comportamento e importante porque padroniza a base sobre a qual todo
+    o restante do avaliador opera. Se esta etapa for inconsistente, erros se
+    propagam para tokenizacao, extracao de palavras-chave e similaridade.
 
     Args:
         texto: Texto de entrada, que pode inclusive ser ``None``.
@@ -168,9 +178,15 @@ def normalizar_texto(texto: str) -> str:
 def tokenizar(texto: str) -> list[str]:
     '''Extrai tokens alfanumericos simples do texto normalizado.
 
-    A expressao regular prioriza simplicidade e previsibilidade, o que e
-    suficiente para o escopo do projeto e reduz a dependencia de tokenizadores
-    mais pesados.
+    A funcao assume que ``texto`` ja passou por normalizacao e, por isso,
+    busca apenas sequencias alfanumericas simples por meio de expressao
+    regular. O objetivo e manter previsibilidade no resultado e evitar um
+    tokenizador pesado para um caso de uso em que interpretabilidade vale mais
+    do que cobertura linguistica total.
+
+    O retorno preserva a ordem de aparicao dos termos, o que depois ajuda em
+    funcoes como ``extrair_palavras_chave``, que usa a primeira ocorrencia
+    como criterio de desempate.
 
     Args:
         texto: Texto previamente normalizado.
@@ -185,8 +201,14 @@ def tokenizar(texto: str) -> list[str]:
 def radicalizar_token(token: str) -> str:
     '''Aplica stemming em um token usando o algoritmo em portugues.
 
-    O radical resultante e usado para comparacao aproximada entre palavras de
-    mesma familia, como singular e plural ou flexoes verbais.
+    A variavel ``token`` representa uma unidade lexical ja limpa. Ao passar
+    pelo ``SnowballStemmer`` para portugues, ela e reduzida a um radical que
+    aproxima variacoes da mesma familia morfologica, como singular e plural ou
+    tempos verbais diferentes.
+
+    Esse passo melhora recall na comparacao entre resposta esperada e resposta
+    do usuario, porque reduz a penalizacao por pequenas variacoes de forma
+    quando o significado central foi preservado.
 
     Args:
         token: Token individual que sera reduzido ao seu radical.
@@ -205,10 +227,18 @@ def preprocessar_texto(
 ) -> TextoProcessado:
     '''Executa o pipeline completo de pre-processamento textual.
 
-    O fluxo atual combina normalizacao, tokenizacao, remocao opcional de
-    stopwords e stemming opcional. O resultado preserva tanto os tokens limpos
-    quanto os radicais usados na comparacao, o que facilita auditoria e
-    experimentacao com diferentes configuracoes.
+    Esta funcao concentra toda a preparacao do texto antes da avaliacao. O
+    fluxo usa ``normalizado`` como versao padronizada do texto, ``tokens`` como
+    lista de palavras limpas, ``stopwords_ativas`` como conjunto efetivo de
+    filtragem e ``tokens_comparacao`` como a representacao final que sera usada
+    nas comparacoes entre respostas.
+
+    Os parametros ``remover_stopwords`` e ``aplicar_stemming`` mudam
+    diretamente a sensibilidade do avaliador. Manter stopwords pode conservar
+    mais contexto, mas tambem aumenta ruido. Aplicar stemming amplia matching
+    entre variacoes de palavras, mas simplifica a forma original. Por isso, a
+    funcao retorna um ``TextoProcessado`` rico o bastante para auditoria e
+    experimentacao.
 
     Args:
         texto: Texto original a ser processado.
@@ -248,9 +278,15 @@ def preprocessar_texto(
 def extrair_palavras_chave(tokens: list[str], limite: int = 6) -> list[str]:
     '''Seleciona palavras-chave por frequencia e ordem de aparicao.
 
-    Tokens muito curtos sao ignorados para reduzir ruido. Em seguida, os
-    termos sao ordenados pela frequencia decrescente e, em caso de empate, pela
-    primeira ocorrencia no texto, preservando relevancia local.
+    A funcao percorre ``tokens`` para montar dois mapas auxiliares:
+    ``frequencia``, que conta quantas vezes cada termo apareceu, e
+    ``primeira_posicao``, que registra onde cada termo surgiu pela primeira
+    vez. Esses dois dicionarios sustentam a ordenacao final.
+
+    Tokens muito curtos sao ignorados para reduzir ruido. Depois, os termos
+    sao ordenados por frequencia decrescente e, em caso de empate, pela ordem
+    da primeira aparicao. Na pratica, isso privilegia palavras repetidas e
+    ainda respeita relevancia local do texto original.
 
     Args:
         tokens: Lista de tokens limpos a partir da qual as palavras-chave serao
