@@ -193,7 +193,8 @@ Observações importantes:
 - o código aceita aliases como `OPENAI_API_KEY`, `AZURE_ENDPOINT`, `AZURE_DEPLOYMENT` e `OPENAI_MODEL`;
 - o campo `model` enviado ao SDK precisa ser o nome do deployment no Azure, não necessariamente o nome comercial do modelo;
 - se você colar uma URL com `/openai/...` e `api-version`, o código tenta normalizar essa URL para o endpoint base;
-- `AZURE_OPENAI_TEMPERATURE` é opcional, porque alguns deployments rejeitam temperatura explícita.
+- `AZURE_OPENAI_TEMPERATURE` agora é obrigatória no carregamento de configuração;
+- se ela estiver ausente ou não for numérica, o projeto falha cedo antes de chamar a API.
 
 ## Como cada motor funciona
 

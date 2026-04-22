@@ -680,7 +680,7 @@ Campos:
 - `endpoint`, endereço do recurso Azure;
 - `deployment`, nome do deployment configurado no Azure;
 - `api_version`, versão da API;
-- `temperatura`, valor opcional de temperatura.
+- `temperatura`, valor obrigatório de temperatura.
 
 Por que existe:
 
@@ -722,7 +722,7 @@ Ela faz:
 3. lê e normaliza o endpoint;
 4. lê o nome do deployment;
 5. lê a versão da API ou usa a padrão;
-6. lê a temperatura opcional;
+6. lê a temperatura obrigatória;
 7. verifica se falta algum campo obrigatório;
 8. retorna `ConfiguracaoAzureOpenAI`.
 
@@ -739,7 +739,7 @@ Variáveis principais:
 - `endpoint`, destino base do recurso Azure;
 - `deployment`, nome real da implantação usada pelo SDK;
 - `api_version`, versão da API;
-- `temperatura`, parâmetro opcional de comportamento do modelo;
+- `temperatura`, parâmetro obrigatório de comportamento do modelo;
 - `ausentes`, lista usada para falhar cedo com mensagem útil.
 
 Por que existe:
@@ -775,25 +775,25 @@ Por que existe:
 - diferencia configuração obrigatória de configuração opcional;
 - evita repetição de código ao ler várias variáveis.
 
-### 7.7. `carregar_temperatura() -> float | None`
+### 7.7. `carregar_temperatura() -> float`
 
 Lê `AZURE_OPENAI_TEMPERATURE`.
 
 Comportamento:
 
-- se a variável não existir ou estiver vazia, retorna `None`;
+- se a variável não existir ou estiver vazia, lança erro;
 - se existir, tenta converter para `float`;
 - se a conversão falhar, lança erro explicando que precisa ser número.
 
 Por que existe:
 
-- alguns deployments do Azure OpenAI não aceitam temperatura customizada;
-- enviar temperatura só quando configurada evita erro em deployments mais restritos.
+- força um contrato explícito de configuração para o avaliador semântico;
+- evita que o comportamento do modelo varie silenciosamente por temperatura implícita do deployment.
 
 Trade-off:
 
-- aumenta a compatibilidade;
-- deixa a temperatura padrão nas mãos do deployment quando a variável não é definida.
+- aumenta previsibilidade e controle operacional;
+- exige mais cuidado no setup do `.env`, porque a ausência da variável passa a bloquear a execução.
 
 ### 7.8. `normalizar_endpoint_azure(endpoint: str) -> str`
 
@@ -859,7 +859,7 @@ Ela faz:
 2. carrega configuração, se nenhuma foi passada;
 3. cria o cliente Azure OpenAI;
 4. monta os parâmetros da chamada;
-5. adiciona temperatura somente quando configurada;
+5. adiciona temperatura obrigatoriamente aos parâmetros da chamada;
 6. chama `cliente.chat.completions.create`;
 7. lê o conteúdo retornado pelo modelo;
 8. converte o conteúdo JSON em dicionário;

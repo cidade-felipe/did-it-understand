@@ -17,7 +17,7 @@ class ConfiguracaoAzureOpenAI:
     endpoint: str
     deployment: str
     api_version: str
-    temperatura: float | None = None
+    temperatura: float
 
 
 @dataclass(slots=True)
@@ -43,7 +43,7 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
     importantes sao ``api_key``, ``endpoint``, ``deployment`` e
     ``api_version``, porque definem autenticacao, destino da chamada e modelo
     efetivamente utilizado. A variavel ``temperatura`` entra como parametro
-    opcional de comportamento do modelo.
+    obrigatorio de comportamento do modelo.
 
     Ha tambem uma lista auxiliar, ``ausentes``, usada para acumular quais
     configuracoes obrigatorias nao foram encontradas. Isso melhora muito a
@@ -69,7 +69,7 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
         'API_VERSION'
     )
     api_version = obter_env_opcional('AZURE_OPENAI_API_VERSION', 'OPENAI_API_VERSION','API_VERSION')
-    temperatura = carregar_temperatura()
+    temperatura_bruta = obter_env_opcional('AZURE_OPENAI_TEMPERATURE')
 
     ausentes = []
     if not api_key:
@@ -78,11 +78,15 @@ def carregar_configuracao() -> ConfiguracaoAzureOpenAI:
         ausentes.append('AZURE_OPENAI_ENDPOINT ou AZURE_ENDPOINT')
     if not deployment:
         ausentes.append('AZURE_OPENAI_DEPLOYMENT')
+    if temperatura_bruta is None:
+        ausentes.append('AZURE_OPENAI_TEMPERATURE')
 
     if ausentes:
         raise RuntimeError(
             'Configuração incompleta. Defina no .env: ' + '; '.join(ausentes) + '.'
         )
+
+    temperatura = carregar_temperatura()
 
     return ConfiguracaoAzureOpenAI(
         api_key=api_key,
@@ -137,30 +141,31 @@ def obter_env_opcional(*nomes: str) -> str | None:
     return None
 
 
-def carregar_temperatura() -> float | None:
-    '''Carrega a temperatura opcional do modelo a partir do ambiente.
+def carregar_temperatura() -> float:
+    '''Carrega a temperatura obrigatoria do modelo a partir do ambiente.
 
     A variavel de interesse aqui e ``AZURE_OPENAI_TEMPERATURE``. Quando ela
-    existe, a funcao tenta convertela para ``float`` de forma defensiva.
-    Quando nao existe, retorna ``None`` para que a chamada da API use o
-    comportamento padrao do provedor.
+    existe, a funcao tenta convertela para ``float`` de forma defensiva. Como
+    a temperatura agora faz parte do contrato minimo de configuracao do
+    projeto, a ausencia da variavel passa a ser tratada como erro de
+    configuracao, nao mais como fallback silencioso.
 
-    Essa abordagem evita duas classes de problema: falhar por ausencia de um
-    parametro que e opcional e, ao mesmo tempo, aceitar silenciosamente um
-    valor textual invalido que mudaria o comportamento do modelo de forma
-    imprevisivel.
+    Essa abordagem melhora previsibilidade operacional. Em vez de deixar o
+    comportamento do deployment decidir a temperatura de forma implícita, o
+    sistema exige um valor explícito no ambiente e valida esse valor antes de
+    qualquer chamada à API.
 
     Returns:
-        Valor em ponto flutuante quando a configuracao existe, ou ``None`` para
-        deixar a API operar com o padrao do provedor.
+        Valor em ponto flutuante validado a partir do ambiente.
 
     Raises:
+        RuntimeError: Quando ``AZURE_OPENAI_TEMPERATURE`` nao foi definida.
         RuntimeError: Quando o valor informado nao pode ser interpretado como
             numero.
     '''
     valor = os.getenv('AZURE_OPENAI_TEMPERATURE')
     if not valor or not valor.strip():
-        return None
+        raise RuntimeError('Configuração incompleta. Defina no .env: AZURE_OPENAI_TEMPERATURE.')
 
     try:
         return float(valor)
@@ -268,7 +273,7 @@ def avaliar_resposta_com_ia(
     Variaveis principais do fluxo:
         - ``configuracao`` define como e para onde a chamada sera feita;
         - ``parametros`` concentra modelo, mensagens, formato de resposta e
-          temperatura opcional;
+          temperatura obrigatoria;
         - ``resposta`` e o objeto bruto devolvido pela API;
         - ``conteudo`` representa o JSON textual emitido pelo modelo;
         - ``dados`` e a versao parseada e pronta para validacao defensiva.
@@ -307,10 +312,8 @@ def avaliar_resposta_com_ia(
         'model': configuracao.deployment,
         'response_format': {'type': 'json_object'},
         'messages': montar_mensagens(pergunta, resposta_esperada, resposta_usuario),
+        'temperature': configuracao.temperatura,
     }
-
-    if configuracao.temperatura is not None:
-        parametros['temperature'] = configuracao.temperatura
 
     resposta = cliente.chat.completions.create(**parametros)
 
